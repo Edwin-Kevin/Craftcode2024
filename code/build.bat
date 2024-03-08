@@ -8,3 +8,5 @@ for /r "%DIRECTORY%" %%i in (*) do (
 
 cmake .. -G "MinGW Makefiles"
 make
+
+pause
