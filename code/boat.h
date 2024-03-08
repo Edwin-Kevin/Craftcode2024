@@ -1,3 +1,8 @@
+#define BOAT_STATUS_MOVING 0
+#define BOAT_STATUS_NORMAL 1
+#define BOAT_STATUS_WAITING 2
+
+const int boat_num = 5;
 int boat_capacity;
 /* 
     @brief: 船
@@ -7,6 +12,6 @@ int boat_capacity;
 */
 struct Boat
 {
-    int num, pos, status;
-}boat[10];
+    int pos, status;
+}boat[boat_num];
 

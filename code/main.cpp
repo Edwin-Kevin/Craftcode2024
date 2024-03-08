@@ -66,6 +66,13 @@ int main()
         // 输出对机器人和船的操作指令
         for(int i = 0; i < robot_num; ++ i)
             printf("move %d %d\n", i, rand() % 4);
+
+        // 测试一下船只的移动功能
+        for(int i = 0; i < boat_num; ++ i)
+        {
+            if(boat[i].status == BOAT_STATUS_NORMAL && boat[i].pos == -1)
+                printf("ship %d %d\n", i, i * 2);
+        }
         puts("OK");
         fflush(stdout);
     }
