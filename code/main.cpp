@@ -84,15 +84,15 @@ int main()
     for(int frame = 1; frame <= 15000; ++ frame)
     {
         int id = Input();
-        // 输出对机器人和船的操作指令
+        // 输出对机器人的操作指令
         for(int i = 0; i < robot_num; ++ i)
         {
             printf("move %d %d\n", i, rand() % 4);
         }
 
         // 输出最小的五个 weight 以及它们对应的 berth 索引，从而选择五个最好的港口
-        int cnt = 0;
         for (int weight : minWeights) {
+            int cnt = 0; // 轮船编号
             auto range = weightToIndex.equal_range(weight); // 在 weightToIndex 中查找 weight 值
             // range.first 和 range.second 分别是迭代器，指向匹配的第一个元素和超出匹配元素序列的元素
             for (auto it = range.first; it != range.second; ++it) {
@@ -100,23 +100,20 @@ int main()
                 // 船只在虚拟点且可移动
                 if(boat[cnt].status == BOAT_STATUS_NORMAL && boat[cnt].pos == -1)
                 {
+                    berth[berthIndex].boat_index = cnt;
                     printf("ship %d %d\n", cnt, berthIndex);
                 }
                 ++cnt;
             }
         }
 
-        // 移动船只
+        // 检查船只
         for(int i = 0; i < boat_num; ++ i)
         {
-            // // 如果船在虚拟点
-            // if(boat[i].status == BOAT_STATUS_NORMAL && boat[i].pos == -1)
-            //     printf("ship %d %d\n", i, i * 2);
-
-
             // 如果船装满了货，就开走
             if(boat[i].goods >= boat_capacity && boat[i].status == BOAT_STATUS_NORMAL)
             {
+                berth[boat[i].pos].boat_index = -1;
                 printf("go %d\n", i);
             }
         }
