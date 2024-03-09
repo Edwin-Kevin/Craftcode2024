@@ -12,6 +12,8 @@ https://zh.wikipedia.org/wiki/A*%E6%90%9C%E5%B0%8B%E6%BC%94%E7%AE%97%E6%B3%95
 
 跳点搜索保留了A*的最优性，同时可能将其运行时间缩短一个数量级。
 
+https://www.gamedev.net/tutorials/programming/artificial-intelligence/jump-point-search-fast-a-pathfinding-for-uniform-cost-grids-r4220/
+
 ---
 
 算法 Demo
