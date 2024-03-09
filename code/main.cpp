@@ -117,6 +117,28 @@ int main()
                 printf("go %d\n", i);
             }
         }
+
+        // 检查港口
+        for(int i = 0; i < berth_num; ++i)
+        {
+            // 港口将货物装载到船上
+            if(berth[i].goods > 0 && berth[i].boat_index != -1)
+            {
+                if(boat[berth[i].boat_index].goods < boat_capacity)
+                {
+                    if((berth[i].goods > berth[i].loading_speed) &&
+                     ((boat_capacity - boat[berth[i].boat_index].goods) > berth[i].loading_speed))
+                    {
+                        boat[berth[i].boat_index].goods += berth[i].loading_speed;
+                        berth[i].goods -= berth[i].loading_speed;
+                    }
+                    else{
+                        boat[berth[i].boat_index].goods += min(berth[i].goods, boat_capacity - boat[berth[i].boat_index].goods);
+                        berth[i].goods -= min(berth[i].goods, boat_capacity - boat[berth[i].boat_index].goods);
+                    }
+                }
+            }
+        }
         puts("OK");
         fflush(stdout);
     }
