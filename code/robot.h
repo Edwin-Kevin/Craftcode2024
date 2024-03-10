@@ -1,6 +1,12 @@
 #include <cstdio>
 #include <cstring>
 #include <vector>
+
+#define ROBOT_MOVE_RIGHT  0
+#define ROBOT_MOVE_LEFT   1
+#define ROBOT_MOVE_UP     2
+#define ROBOT_MOVE_DOWN   3
+
 const int robot_num = 10;
 
 /* 
@@ -21,13 +27,19 @@ struct Robot
     }
 }robot[robot_num + 10];
 
-//在初始化中寻找机器人的位置
-std::vector<int> GetRobotPlace(char* str) {
+/* 
+    @brief: 在初始化中寻找机器人的位置
+    @params: str: 
+    @ret: std::vector<int>
+*/
+std::vector<int> GetRobotPlace(char* str) 
+{
     std::vector<int> positions; // 用于存储字符 'A' 的位置
     char* position = str;
 
     // 使用循环查找字符串中的所有字符 'A'
-    while ((position = strchr(position, 'A')) != nullptr) {
+    while ((position = strchr(position, 'A')) != nullptr) 
+    {
         int pos = position - str;
         positions.push_back(pos);
         position++; // 移动到下一个位置继续搜索

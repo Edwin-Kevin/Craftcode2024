@@ -1,12 +1,10 @@
 #include "main.h"
-#include"astar.h"
-#include <vector>
 
 int money, id;
 char ch[N][N];
-//vector存储地图
+// vector存储地图
 std::vector<std::vector<char>> chmap;
-//存放在初始化时机器人的路线
+// 存放在初始化时机器人的路线
 std::vector<std::vector<Point>> allPaths;
 int gds[N][N];
 // set 可以自动排序元素，使元素保持升序
@@ -16,11 +14,15 @@ multimap<int, int> weightToIndex;
 
 
 
-//将二维字符数组转换为 vector<vector<char>>：
-std::vector<std::vector<char>> convertToVector(char ch[N][N]) {
+// 将二维字符数组转换为 vector<vector<char>>：
+std::vector<std::vector<char>> convertToVector(char ch[N][N]) 
+{
     std::vector<std::vector<char>> result;
-    for (int i = 0; i < N; ++i) {
+    for(int i = 0; i < N; ++i) 
+    {
+        // 将 `ch[i] + ch[i] + N` 的内容填充到 row
         std::vector<char> row(ch[i], ch[i] + N);
+        // 将 row 的内容追加到 result 结尾
         result.push_back(row);
     }
     return result;
@@ -29,19 +31,22 @@ std::vector<std::vector<char>> convertToVector(char ch[N][N]) {
 
 void Init()
 {
-    int robot_number =robot_num;
+    int robot_number = 0;
     // 读入地图信息
     for(int i = 1; i <= n; i ++)
     {
         scanf("%s", ch[i] + 1);
-        //在输入时检查机器人的位置
-        std::vector<int> allPositions=GetRobotPlace(ch[i]+1);
-        if (!allPositions.empty()) {
-        for (int pos : allPositions) {
-            //printf("%d ", pos);
-            robot[--robot_number].x=i;
-            robot[--robot_number].y=pos;
-        }
+        // 从地图中读入机器人的初始位置
+        std::vector<int> allPositions = GetRobotPlace(ch[i] + 1);
+        if (!allPositions.empty()) 
+        {
+            for (int pos : allPositions) 
+            {
+                //printf("%d ", pos);
+                robot[robot_number].x = i;
+                robot[robot_number].y = pos;
+                robot_number++;
+            }
         }
     }
 
@@ -71,13 +76,15 @@ void Init()
     scanf("%d", &boat_capacity);
     char okk[100];
     scanf("%s", okk);
-    chmap=convertToVector(ch);
-    for(int i=0;i<robot_num;++i)
+
+    chmap = convertToVector(ch);
+    // 初期先测试一个机器人的情况
+    for(int i = 0; i < 1; ++i)
     {
         Point start(robot[i].x, robot[i].y);
-        int berthid=nearest_port(robot[i].x, robot[i].y);
+        int berthid = nearest_port(robot[i].x, robot[i].y);
         Point end(berth[berthid].x, berth[berthid].y);
-        vector<Point> path=AStar(chmap, start, end);
+        vector<Point> path = AStar(chmap, start, end);
         allPaths.push_back(path);
     }
     // 初始化完成

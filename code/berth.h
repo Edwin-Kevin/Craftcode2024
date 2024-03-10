@@ -30,18 +30,18 @@ struct Berth
 /* 
     @brief: 寻找最近泊位
     @params: x,y: 机器人的横坐标和纵坐标
-    @ret: none
+    @ret: 最近泊位的编号
 */
 int nearest_port(int x, int y)
 {
     int nearestid;
-    int max=400;
-    for(int i = 0; i <berth_num;++i)
+    int min = 400;
+    for(int i = 0; i < berth_num; ++i)
     {
-        if(abs(berth[i].x-x)+ abs(berth[i].y -y)<max)
+        if(abs(berth[i].x - x) + abs(berth[i].y - y) < min)
         {
-            max= abs(berth[i].x-x)+ abs(berth[i].y -y);
-            nearestid=i;
+            min = abs(berth[i].x - x) + abs(berth[i].y - y);
+            nearestid = i;
         };
     }
     return nearestid;
