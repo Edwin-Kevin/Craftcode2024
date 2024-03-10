@@ -117,6 +117,32 @@ int main()
                 printf("go %d\n", i);
             }
         }
+
+        // 检查港口
+        for(int i = 0; i < berth_num; ++i)
+        {
+            // 港口将货物装载到船上
+            if(berth[i].goods > 0 && berth[i].boat_index != -1)
+            {
+                // 如果船没装满
+                if(boat[berth[i].boat_index].goods < boat_capacity)
+                {
+                    // 如果港口堆积的货物比 loading_speed 要多，并且船剩下的容量也大于 loading_speed
+                    if((berth[i].goods > berth[i].loading_speed) &&
+                     ((boat_capacity - boat[berth[i].boat_index].goods) > berth[i].loading_speed))
+                    {
+                        // 那么就装 loading_speed 个货
+                        boat[berth[i].boat_index].goods += berth[i].loading_speed;
+                        berth[i].goods -= berth[i].loading_speed;
+                    }
+                    else{
+                        // 否则把港口的货全装上，或者把船装满，两者满足其一
+                        boat[berth[i].boat_index].goods += min(berth[i].goods, boat_capacity - boat[berth[i].boat_index].goods);
+                        berth[i].goods -= min(berth[i].goods, boat_capacity - boat[berth[i].boat_index].goods);
+                    }
+                }
+            }
+        }
         puts("OK");
         fflush(stdout);
     }
