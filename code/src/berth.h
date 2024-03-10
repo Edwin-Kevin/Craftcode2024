@@ -26,3 +26,23 @@ struct Berth
         this -> loading_speed = loading_speed;
     }
 }berth[berth_num + 10];
+
+/* 
+    @brief: 寻找最近泊位
+    @params: x,y: 机器人的横坐标和纵坐标
+    @ret: none
+*/
+int nearest_port(int x, int y)
+{
+    int nearestid;
+    int max=400;
+    for(int i = 0; i <berth_num;++i)
+    {
+        if(abs(berth[i].x-x)+ abs(berth[i].y -y)<max)
+        {
+            max= abs(berth[i].x-x)+ abs(berth[i].y -y);
+            nearestid=i;
+        };
+    }
+    return nearestid;
+}

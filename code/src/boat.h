@@ -16,4 +16,3 @@ struct Boat
     int pos, status;
     int goods = 0;
 }boat[boat_num];
-
