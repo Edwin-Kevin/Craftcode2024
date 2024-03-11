@@ -10,11 +10,12 @@ set<int> minWeights;
 // 使用 multimap 来存储权重值和对应的 berth 索引
 multimap<int, int> weightToIndex;
 
+const bool isLog = true;
 std::ofstream logFile("log.txt");
 
 void Init()
 {
-    if (logFile.is_open()) 
+    if (isLog) 
     {
         logFile << "Init()" << endl;
     }
@@ -37,7 +38,7 @@ void Init()
         }
     }
 
-    if (logFile.is_open()) 
+    if (isLog) 
     {
         logFile << "Berth number: " << berth_num << endl;
     }
@@ -53,7 +54,7 @@ void Init()
         // 将权重存入集合
         weightToIndex.insert(make_pair(berth[i].weight, i)); // 创建了一个包含权重和索引的键值对
 
-        if (logFile.is_open()) 
+        if (isLog) 
         {
             logFile << "Berth[" << i << "]:" ;
             logFile << "Berth weight: " << berth[i].weight << endl;
@@ -72,14 +73,18 @@ void Init()
         }
     }
 
-    if (logFile.is_open()) 
+    if (isLog) 
     {
         logFile << "minWeights: " ;
         for (const auto& elem : minWeights) 
         {
             logFile << elem << " "; // 将集合中的每个元素写入文件
         }
-        logFile << endl;
+        logFile << endl << "weightToIndex: " << endl;
+        for (const auto& pair : weightToIndex) 
+        {
+            logFile << "Key: " << pair.first << ", Value: " << pair.second << std::endl;
+        }
     }
 
 
@@ -134,7 +139,10 @@ int main()
     // ++ 放变量前面，执行效率更高
     for(int frame = 1; frame <= 15000; ++ frame)
     {
-        logFile << "Frame " << frame << std::endl;
+        if(isLog)
+        {
+            logFile << "Frame " << frame << std::endl;
+        }
         int id = Input();
         // 输出对机器人的操作指令
         for(int i = 0; i < robot_num; ++ i)
@@ -143,9 +151,12 @@ int main()
         }
 
         // 输出最小的五个 weight 以及它们对应的 berth 索引，从而选择五个最好的港口
+        int cnt = 0; // 轮船编号
         for (int weight : minWeights) {
-            int cnt = 0; // 轮船编号
-            logFile << "cnt" << cnt << endl;
+            if(isLog)
+            {
+                logFile << "boatcnt: " << cnt << " weight: " << weight << endl;
+            }
             auto range = weightToIndex.equal_range(weight); // 在 weightToIndex 中查找 weight 值
             // range.first 和 range.second 分别是迭代器，指向匹配的第一个元素和超出匹配元素序列的元素
             for (auto it = range.first; it != range.second; ++it) {
@@ -155,9 +166,14 @@ int main()
                 {
                     berth[berthIndex].boat_index = cnt;
                     printf("ship %d %d\n", cnt, berthIndex);
+                    if(isLog)
+                    {
+                        logFile << "ship " << cnt << " " << berthIndex << std::endl;
+                    }
                 }
                 ++cnt;
             }
+            
         }
 
         // 检查船只
@@ -200,5 +216,6 @@ int main()
         fflush(stdout);
     }
 
+    logFile.close();
     return 0;
 }
