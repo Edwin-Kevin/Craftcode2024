@@ -7,6 +7,23 @@
 
 using namespace std;
 
+// 存储节点的位置、父节点和代价
+struct Node 
+{
+    int parentX, parentY;
+    int x, y;
+    float f, g, h;
+};
+
+// 优先队列的比较函数
+struct comp
+{
+    bool operator()(const Node& lhs, const Node& rhs) const
+    {
+        return lhs.f > rhs.f;
+    }
+};
+
 /*
     @brief: 判断给定节点是否为目标节点
     @param: x, y: 节点位置; destX, destY: 目标节点坐标
@@ -32,7 +49,7 @@ float calculateH(int x, int y, int destX, int destY)
     @param: x, y: 节点位置
     @ret: true 为可走
 */
-bool isUnBlocked(char grid[N][N], int x, int y)
+bool isUnBlocked(char grid[n][n], int x, int y)
 {
     if(x >= 0 && x < n && y >= 0 && y < n && (grid[x][y] == '*' || grid[x][y] == 'A'))
     {
@@ -46,7 +63,7 @@ bool isUnBlocked(char grid[N][N], int x, int y)
     @param: srcX, srcY: 起始点坐标; destX, destY: 终点坐标
     @ret: none
 */
-void aStarSearch(char grid[N][N], int srcX, int srcY, int destX, int destY)
+void aStarSearch(char grid[n][n], int srcX, int srcY, int destX, int destY)
 {
     // 若起点或终点不可达
     if(!isUnBlocked(grid, srcX, srcY) || !isUnBlocked(grid, destX, destY))
@@ -87,10 +104,10 @@ void aStarSearch(char grid[N][N], int srcX, int srcY, int destX, int destY)
 
     priority_queue<Node, vector<Node>, comp> openList; // 按 f 值排序
     openList.push(nodes[i][j]);
-
+    
     while(!openList.empty())
     {
-        const Node node = openList.top();
+        Node node = openList.top();
         openList.pop();
         i = node.x;
         j = node.y;

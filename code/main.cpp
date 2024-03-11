@@ -1,7 +1,7 @@
 #include "main.h"
 
-char ch[N][N]; // 存储地图
-int gds[N][N]; // 存储当前货物位置
+char ch[n][n]; // 存储地图
+int gds[n][n]; // 存储当前货物位置
 int boat_capacity;
 Berth berth[berth_num];
 Robot robot[robot_num];
@@ -19,8 +19,8 @@ void Init()
     {
         logFile << "Init()" << endl;
     }
-    int robot_number = 0;
     // 读入地图信息
+    int robot_number = 0;
     for(int i = 1; i <= n; i ++)
     {
         scanf("%s", ch[i] + 1);
@@ -34,6 +34,11 @@ void Init()
                 robot[robot_number].x = i;
                 robot[robot_number].y = pos;
                 robot_number++;
+                if(isLog)
+                {
+                    logFile << "robot[" << robot_number << "]: (" << i << ", " 
+                    << pos << ")" << endl;
+                }
             }
         }
     }
@@ -191,7 +196,7 @@ int main()
         for(int i = 0; i < berth_num; ++i)
         {
             // 港口将货物装载到船上
-            if(berth[i].goods > 0 && berth[i].boat_index != -1)
+            if(berth[i].goods > 0 && berth[i].boat_index != -1 && boat[berth[i].boat_index].status == BOAT_STATUS_NORMAL)
             {
                 // 如果船没装满
                 if(boat[berth[i].boat_index].goods < boat_capacity)
