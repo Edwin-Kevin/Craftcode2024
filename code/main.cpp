@@ -1,16 +1,9 @@
 #include "main.h"
 
-int money, id;
-char ch[N][N];
-int gds[N][N];
 // set 可以自动排序元素，使元素保持升序
 set<int> minWeights;
 // 使用 multimap 来存储权重值和对应的 berth 索引
 multimap<int, int> weightToIndex;
-
-
-
-
 
 void Init()
 {

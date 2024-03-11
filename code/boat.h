@@ -1,3 +1,5 @@
+#pragma once
+
 #define BOAT_STATUS_MOVING 0
 #define BOAT_STATUS_NORMAL 1
 #define BOAT_STATUS_WAITING 2
