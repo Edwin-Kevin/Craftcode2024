@@ -97,11 +97,6 @@ void Init()
     char okk[100];
     scanf("%s", okk);
 
-    // 初期先测试一个机器人的情况
-    for(int i = 0; i < 1; ++i)
-    {
-
-    }
     // 初始化完成
     printf("OK\n");
     fflush(stdout);
@@ -153,6 +148,17 @@ int main()
         for(int i = 0; i < robot_num; ++ i)
         {
             printf("move %d %d\n", i, rand() % 4);
+        }
+
+        // 测试 A*
+        auto path = aStarSearch(ch, 175, 9, 175, 7);
+        if(isLog)
+        {
+            logFile << "path: " << endl;
+            for(const auto& elem : path)
+            {
+                logFile << "(" << elem.first << ", " << elem.second << ")" << endl;
+            }
         }
 
         // 输出最小的五个 weight 以及它们对应的 berth 索引，从而选择五个最好的港口

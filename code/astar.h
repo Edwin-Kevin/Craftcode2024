@@ -14,6 +14,6 @@
     @param: srcX, srcY: 起始点坐标; destX, destY: 终点坐标
     @ret: none
 */
-void aStarSearch(char grid[n][n], int srcX, int srcY, int destX, int destY);
+std::vector<std::pair<int, int>> aStarSearch(char grid[n][n], int srcX, int srcY, int destX, int destY);
 
 #endif

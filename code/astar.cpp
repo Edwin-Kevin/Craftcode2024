@@ -1,9 +1,4 @@
 #include "astar.h"
-#include <iostream>
-#include <vector>
-#include <queue>
-#include <cmath>
-#include <algorithm>
 
 using namespace std;
 
@@ -51,7 +46,7 @@ float calculateH(int x, int y, int destX, int destY)
 */
 bool isUnBlocked(char grid[n][n], int x, int y)
 {
-    if(x >= 0 && x < n && y >= 0 && y < n && (grid[x][y] == '*' || grid[x][y] == 'A'))
+    if(x >= 0 && x < n && y >= 0 && y < n && (grid[x][y] == '.' || grid[x][y] == 'A' || grid[x][y] == 'B'))
     {
         return true;
     }
@@ -63,12 +58,13 @@ bool isUnBlocked(char grid[n][n], int x, int y)
     @param: srcX, srcY: 起始点坐标; destX, destY: 终点坐标
     @ret: none
 */
-void aStarSearch(char grid[n][n], int srcX, int srcY, int destX, int destY)
+std::vector<std::pair<int, int>> aStarSearch(char grid[n][n], int srcX, int srcY, int destX, int destY)
 {
     // 若起点或终点不可达
     if(!isUnBlocked(grid, srcX, srcY) || !isUnBlocked(grid, destX, destY))
     {
-        return;
+        return std::vector<std::pair<int, int>>();
+        // return {{isUnBlocked(grid, srcX, srcY), isUnBlocked(grid, destX, destY)}, {1, 2}};
     }
 
     bool closedList[n][n];
@@ -118,9 +114,22 @@ void aStarSearch(char grid[n][n], int srcX, int srcY, int destX, int destY)
             int newX = i + dx[k];
             int newY = j + dy[k];
 
+            // 找到目的地
             if(isDestination(newX, newY, destX, destY))
             {
-                return;
+                // 给出路径
+                vector<pair<int, int>> path;
+                while(!(nodes[newX][newY].parentX == newX && nodes[newX][newY].parentY == newY))
+                {
+                    path.push_back(make_pair(newX, newY));
+                    int tempX = nodes[newX][newY].parentX;
+                    newY = nodes[newX][newY].parentY;
+                    newX = tempX;
+                }
+                path.push_back(make_pair(srcX, srcY));
+                reverse(path.begin(), path.end());
+
+                return path;
             }
             
             // Check if the node can be calculated.
@@ -145,5 +154,7 @@ void aStarSearch(char grid[n][n], int srcX, int srcY, int destX, int destY)
             }
         }
     }
+    // Return an empty path when failed.
+    return vector<pair<int, int>>();
 
 }
