@@ -1,6 +1,7 @@
 #pragma once
-
-const int berth_num = 10;
+#ifndef BERTH_H
+#define BERTH_H
+#define berth_num 10
 
 /* 
     @brief: 泊位
@@ -27,24 +28,14 @@ struct Berth
         this -> transport_time = transport_time;
         this -> loading_speed = loading_speed;
     }
-}berth[berth_num + 10];
+};
 
 /* 
     @brief: 寻找最近泊位
     @params: x,y: 机器人的横坐标和纵坐标
     @ret: 最近泊位的编号
 */
-int nearest_port(int x, int y)
-{
-    int nearestid;
-    int min = 400;
-    for(int i = 0; i < berth_num; ++i)
-    {
-        if(abs(berth[i].x - x) + abs(berth[i].y - y) < min)
-        {
-            min = abs(berth[i].x - x) + abs(berth[i].y - y);
-            nearestid = i;
-        };
-    }
-    return nearestid;
-}
+int nearest_port(int x, int y);
+
+#endif
+

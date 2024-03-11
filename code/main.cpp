@@ -1,12 +1,23 @@
 #include "main.h"
 
+char ch[N][N]; // 存储地图
+int gds[N][N]; // 存储当前货物位置
+int boat_capacity;
+Berth berth[berth_num];
+Robot robot[robot_num];
 // set 可以自动排序元素，使元素保持升序
 set<int> minWeights;
 // 使用 multimap 来存储权重值和对应的 berth 索引
 multimap<int, int> weightToIndex;
 
+std::ofstream logFile("log.txt");
+
 void Init()
 {
+    if (logFile.is_open()) 
+    {
+        logFile << "Init()" << endl;
+    }
     int robot_number = 0;
     // 读入地图信息
     for(int i = 1; i <= n; i ++)
@@ -26,6 +37,11 @@ void Init()
         }
     }
 
+    if (logFile.is_open()) 
+    {
+        logFile << "Berth number: " << berth_num << endl;
+    }
+    
     // 读入泊位信息
     for(int i = 0; i < berth_num; i ++)
     {
@@ -36,6 +52,13 @@ void Init()
         berth[i].weight = -200 * berth[i].loading_speed + 1 * berth[i].transport_time;
         // 将权重存入集合
         weightToIndex.insert(make_pair(berth[i].weight, i)); // 创建了一个包含权重和索引的键值对
+
+        if (logFile.is_open()) 
+        {
+            logFile << "Berth[" << i << "]:" ;
+            logFile << "Berth weight: " << berth[i].weight << endl;
+        }
+
         minWeights.insert(berth[i].weight); // 权重值存入 minWeights
         // 遍历 weightToIndex 集合，尝试更新 minWeights 集合
         for (const auto &pair : weightToIndex) {
@@ -48,6 +71,17 @@ void Init()
             }
         }
     }
+
+    if (logFile.is_open()) 
+    {
+        logFile << "minWeights: " ;
+        for (const auto& elem : minWeights) 
+        {
+            logFile << elem << " "; // 将集合中的每个元素写入文件
+        }
+        logFile << endl;
+    }
+
 
     scanf("%d", &boat_capacity);
     char okk[100];
@@ -100,6 +134,7 @@ int main()
     // ++ 放变量前面，执行效率更高
     for(int frame = 1; frame <= 15000; ++ frame)
     {
+        logFile << "Frame " << frame << std::endl;
         int id = Input();
         // 输出对机器人的操作指令
         for(int i = 0; i < robot_num; ++ i)
@@ -110,6 +145,7 @@ int main()
         // 输出最小的五个 weight 以及它们对应的 berth 索引，从而选择五个最好的港口
         for (int weight : minWeights) {
             int cnt = 0; // 轮船编号
+            logFile << "cnt" << cnt << endl;
             auto range = weightToIndex.equal_range(weight); // 在 weightToIndex 中查找 weight 值
             // range.first 和 range.second 分别是迭代器，指向匹配的第一个元素和超出匹配元素序列的元素
             for (auto it = range.first; it != range.second; ++it) {

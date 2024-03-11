@@ -2,8 +2,12 @@
 
 #include <bits/stdc++.h>
 
-const int n = 200; // 地图的边长
-const int N = 210;
+#ifndef MAP_H
 
-char ch[N][N]; // 存储地图
-int gds[N][N]; // 存储当前货物位置
+#define MAP_H
+#define N 210
+#define n 200
+extern char ch[][N];
+extern int gds[][N];
+
+#endif

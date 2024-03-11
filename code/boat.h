@@ -4,8 +4,8 @@
 #define BOAT_STATUS_NORMAL 1
 #define BOAT_STATUS_WAITING 2
 
-const int boat_num = 5;
-int boat_capacity;
+#define boat_num 5
+extern int boat_capacity;
 /* 
     @brief: 船
     @params: pos: 目标泊位（虚拟点为 -1）;
