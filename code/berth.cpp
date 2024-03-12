@@ -6,7 +6,7 @@
     @params: x,y: 机器人的横坐标和纵坐标
     @ret: 最近泊位的编号
 */
-int nearest_port(int x, int y)
+int nearest_berth(int x, int y)
 {
     extern struct Berth berth[berth_num];
     

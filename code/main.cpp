@@ -1,3 +1,4 @@
+#define LOG  // Comment this line if no need for log file.
 #include "main.h"
 
 char ch[n][n]; // 存储地图
@@ -10,22 +11,23 @@ set<int> minWeights;
 // 使用 multimap 来存储权重值和对应的 berth 索引
 multimap<int, int> weightToIndex;
 
-const bool isLog = true;
+#ifdef LOG
 std::ofstream logFile("log.txt");
+#endif
 
 void Init()
 {
-    if (isLog) 
-    {
+#ifdef LOG
         logFile << "Init()" << endl;
-    }
+#endif
+
     // 读入地图信息
     int robot_number = 0;
-    for(int i = 1; i <= n; i ++)
+    for(int i = 0; i < n; i ++)
     {
-        scanf("%s", ch[i] + 1);
+        scanf("%s", ch[i]);
         // 从地图中读入机器人的初始位置
-        std::vector<int> allPositions = GetRobotPlace(ch[i] + 1);
+        std::vector<int> allPositions = GetRobotPlace(ch[i]);
         if (!allPositions.empty()) 
         {
             for (int pos : allPositions) 
@@ -33,20 +35,18 @@ void Init()
                 //printf("%d ", pos);
                 robot[robot_number].x = i;
                 robot[robot_number].y = pos;
+#ifdef LOG
+                logFile << "robot[" << robot_number << "]: (" << robot[robot_number].x << ", " 
+                << pos << ")" << endl;
+#endif                    
                 robot_number++;
-                if(isLog)
-                {
-                    logFile << "robot[" << robot_number << "]: (" << i << ", " 
-                    << pos << ")" << endl;
-                }
             }
         }
     }
 
-    if (isLog) 
-    {
-        logFile << "Berth number: " << berth_num << endl;
-    }
+#ifdef LOG
+    logFile << "Berth number: " << berth_num << endl;
+#endif
     
     // 读入泊位信息
     for(int i = 0; i < berth_num; i ++)
@@ -59,11 +59,10 @@ void Init()
         // 将权重存入集合
         weightToIndex.insert(make_pair(berth[i].weight, i)); // 创建了一个包含权重和索引的键值对
 
-        if (isLog) 
-        {
-            logFile << "Berth[" << i << "]:" ;
-            logFile << "Berth weight: " << berth[i].weight << endl;
-        }
+#ifdef LOG
+        logFile << "Berth[" << i << "]:" ;
+        logFile << "Berth weight: " << berth[i].weight << endl;
+#endif
 
         minWeights.insert(berth[i].weight); // 权重值存入 minWeights
         // 遍历 weightToIndex 集合，尝试更新 minWeights 集合
@@ -78,19 +77,18 @@ void Init()
         }
     }
 
-    if (isLog) 
+#ifdef LOG
+    logFile << "minWeights: " ;
+    for (const auto& elem : minWeights) 
     {
-        logFile << "minWeights: " ;
-        for (const auto& elem : minWeights) 
-        {
-            logFile << elem << " "; // 将集合中的每个元素写入文件
-        }
-        logFile << endl << "weightToIndex: " << endl;
-        for (const auto& pair : weightToIndex) 
-        {
-            logFile << "Key: " << pair.first << ", Value: " << pair.second << std::endl;
-        }
+        logFile << elem << " "; // 将集合中的每个元素写入文件
     }
+    logFile << endl << "weightToIndex: " << endl;
+    for (const auto& pair : weightToIndex) 
+    {
+        logFile << "Key: " << pair.first << ", Value: " << pair.second << std::endl;
+    }
+#endif
 
 
     scanf("%d", &boat_capacity);
@@ -139,39 +137,48 @@ int main()
     // ++ 放变量前面，执行效率更高
     for(int frame = 1; frame <= 15000; ++ frame)
     {
-        if(isLog)
-        {
-            logFile << "Frame " << frame << std::endl;
-        }
+#ifdef LOG
+        logFile << "Frame " << frame << std::endl;
+#endif
         int id = Input();
         // 输出对机器人的操作指令
-        for(int i = 0; i < robot_num; ++ i)
-        {
-            printf("move %d %d\n", i, rand() % 4);
-        }
+        // for(int i = 0; i < robot_num; ++ i)
+        // {
+        //     printf("move %d %d\n", i, rand() % 4);
+        // }
 
         // 测试 A*
         if(frame == 1)
         {
-            auto path = aStarSearch(ch, 37, 173, 194, 124);
+            robot[0].nearestberth_index = nearest_berth(robot[0].x, robot[0].y);
+#ifdef LOG
+            logFile << "nearestberthIdx: " << robot[0].nearestberth_index << endl;
+#endif
+
+            auto path = aStarSearch(ch, robot[0].x, robot[0].y,
+             berth[robot[0].nearestberth_index].x, berth[robot[0].nearestberth_index].y);
+
+            
+
+#ifdef LOG
+            logFile << "Astar src(x, y): " << robot[0].x << ", " << robot[0].y << endl;
+            logFile << "Astar dst(x, y): " << berth[robot[0].nearestberth_index].x << ", " 
+            << berth[robot[0].nearestberth_index].y << endl;
         
-            if(isLog)
+            logFile << "path: " << endl;
+            for(const auto& elem : path)
             {
-                logFile << "path: " << endl;
-                for(const auto& elem : path)
-                {
-                    logFile << "(" << elem.first << ", " << elem.second << ")" << endl;
-                }
+                logFile << "(" << elem.first << ", " << elem.second << ")" << endl;
             }
+#endif            
         }
 
         // 输出最小的五个 weight 以及它们对应的 berth 索引，从而选择五个最好的港口
         int cnt = 0; // 轮船编号
         for (int weight : minWeights) {
-            if(isLog)
-            {
-                logFile << "boatcnt: " << cnt << " weight: " << weight << endl;
-            }
+#ifdef LOG
+            logFile << "boatcnt: " << cnt << " weight: " << weight << endl;
+#endif
             auto range = weightToIndex.equal_range(weight); // 在 weightToIndex 中查找 weight 值
             // range.first 和 range.second 分别是迭代器，指向匹配的第一个元素和超出匹配元素序列的元素
             for (auto it = range.first; it != range.second; ++it) {
@@ -181,10 +188,9 @@ int main()
                 {
                     berth[berthIndex].boat_index = cnt;
                     printf("ship %d %d\n", cnt, berthIndex);
-                    if(isLog)
-                    {
-                        logFile << "ship " << cnt << " " << berthIndex << std::endl;
-                    }
+#ifdef LOG
+                    logFile << "ship " << cnt << " " << berthIndex << std::endl;
+#endif
                 }
                 ++cnt;
             }
@@ -230,7 +236,8 @@ int main()
         puts("OK");
         fflush(stdout);
     }
-
+#ifdef LOG
     logFile.close();
+#endif
     return 0;
 }

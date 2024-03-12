@@ -163,5 +163,4 @@ std::vector<std::pair<int, int>> aStarSearch(char grid[n][n], int srcX, int srcY
     // Return an empty path when failed.
     return vector<pair<int, int>>();
     // return {{2, 7}};
-
 }

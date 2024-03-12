@@ -26,6 +26,7 @@ struct Robot
         x = startX;
         y = startY;
     }
+    int nearestberth_index;
 };
 
 /* 
