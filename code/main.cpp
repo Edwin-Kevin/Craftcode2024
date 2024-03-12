@@ -134,7 +134,7 @@ int Input()
 int main()
 {
     Init();
-    // ++ 放变量前面，执行效率更高
+    std::vector<std::vector<std::pair<int, int>>> paths(10); // 10 个机器人的路径列表
     for(int frame = 1; frame <= 15000; ++ frame)
     {
 #ifdef LOG
@@ -147,7 +147,8 @@ int main()
         //     printf("move %d %d\n", i, rand() % 4);
         // }
 
-        // 测试 A*
+//-----------------------------------ROBOT------------------------------------------------//
+        // 测试 A*, 这里将机器人 0 移动到最近的泊位
         if(frame == 1)
         {
             robot[0].nearestberth_index = nearest_berth(robot[0].x, robot[0].y);
@@ -155,24 +156,87 @@ int main()
             logFile << "nearestberthIdx: " << robot[0].nearestberth_index << endl;
 #endif
 
-            auto path = aStarSearch(ch, robot[0].x, robot[0].y,
+            paths[0] = aStarSearch(ch, robot[0].x, robot[0].y,
              berth[robot[0].nearestberth_index].x, berth[robot[0].nearestberth_index].y);
-
-            
+            // 把起点去掉
+            paths[0].erase(paths[0].begin());
 
 #ifdef LOG
             logFile << "Astar src(x, y): " << robot[0].x << ", " << robot[0].y << endl;
             logFile << "Astar dst(x, y): " << berth[robot[0].nearestberth_index].x << ", " 
             << berth[robot[0].nearestberth_index].y << endl;
         
-            logFile << "path: " << endl;
-            for(const auto& elem : path)
-            {
-                logFile << "(" << elem.first << ", " << elem.second << ")" << endl;
-            }
+            // logFile << "path: " << endl;
+            // for(const auto& elem : paths[0])
+            // {
+            //     logFile << "(" << elem.first << ", " << elem.second << ")" << endl;
+            // }
 #endif            
         }
 
+        // 检查路径列表是否为空
+        if(!paths[0].empty())
+        {
+            pair<int, int> next_step = paths[0].front();
+            paths[0].erase(paths[0].begin());
+#ifdef LOG
+            logFile << "Robot 0 Next step: (" << next_step.first << ", " << next_step.second << ")" << endl;
+            logFile << "next_step.first - robot[0].x : " << next_step.first - robot[0].x << endl;
+            logFile << "next_step.second - robot[0].y : " << next_step.second - robot[0].y << endl;
+#endif
+            if((abs(next_step.first - robot[0].x) + abs(next_step.second - robot[0].y)) == 1)
+            {
+                if((next_step.first - robot[0].x) == 1)
+                {
+                    printf("move %d %d\n", 0, ROBOT_MOVE_DOWN);
+#ifdef LOG
+                    logFile << "move 0 " << ROBOT_MOVE_DOWN << endl;
+#endif
+                }
+                else if((next_step.first - robot[0].x) == -1)
+                {
+                    printf("move %d %d\n", 0, ROBOT_MOVE_UP);
+#ifdef LOG
+                    logFile << "move 0 " << ROBOT_MOVE_UP << endl;
+#endif
+                }
+                else if((next_step.second - robot[0].y) == 1)
+                {
+                    printf("move %d %d\n", 0, ROBOT_MOVE_RIGHT);
+#ifdef LOG
+                    logFile << "move 0 " << ROBOT_MOVE_RIGHT << endl;
+#endif
+                }
+                else if((next_step.second - robot[0].y) == -1)
+                {
+                    printf("move %d %d\n", 0, ROBOT_MOVE_LEFT);
+#ifdef LOG
+                    logFile << "move 0 " << ROBOT_MOVE_LEFT << endl;
+#endif
+                }
+            }
+            else{
+                robot[0].nearestberth_index = nearest_berth(robot[0].x, robot[0].y);
+                paths[0] = aStarSearch(ch, robot[0].x, robot[0].y,
+                berth[robot[0].nearestberth_index].x, berth[robot[0].nearestberth_index].y);
+                paths[0].erase(paths[0].begin());
+            }
+        }
+        // 机器人到目的地了
+        else if(robot[0].x == berth[robot[0].nearestberth_index].x && robot[0].y == berth[robot[0].nearestberth_index].y)
+        {
+#ifdef LOG
+            logFile << "Robot 0 reached the target! " << endl;
+#endif
+        }
+        else{
+            robot[0].nearestberth_index = nearest_berth(robot[0].x, robot[0].y);
+            paths[0] = aStarSearch(ch, robot[0].x, robot[0].y,
+            berth[robot[0].nearestberth_index].x, berth[robot[0].nearestberth_index].y);
+            paths[0].erase(paths[0].begin());
+        }
+
+//---------------------------------------BERTH---------------------------------------//
         // 输出最小的五个 weight 以及它们对应的 berth 索引，从而选择五个最好的港口
         int cnt = 0; // 轮船编号
         for (int weight : minWeights) {
@@ -197,6 +261,7 @@ int main()
             
         }
 
+//-----------------------------------BOAT------------------------------------//
         // 检查船只
         for(int i = 0; i < boat_num; ++ i)
         {
@@ -208,6 +273,7 @@ int main()
             }
         }
 
+//----------------------------------GOODS-----------------------------------//
         // 检查港口
         for(int i = 0; i < berth_num; ++i)
         {
