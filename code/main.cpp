@@ -151,13 +151,17 @@ int main()
         }
 
         // 测试 A*
-        auto path = aStarSearch(ch, 175, 9, 175, 7);
-        if(isLog)
+        if(frame == 1)
         {
-            logFile << "path: " << endl;
-            for(const auto& elem : path)
+            auto path = aStarSearch(ch, 37, 173, 194, 124);
+        
+            if(isLog)
             {
-                logFile << "(" << elem.first << ", " << elem.second << ")" << endl;
+                logFile << "path: " << endl;
+                for(const auto& elem : path)
+                {
+                    logFile << "(" << elem.first << ", " << elem.second << ")" << endl;
+                }
             }
         }
 

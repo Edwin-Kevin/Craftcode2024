@@ -100,9 +100,10 @@ std::vector<std::pair<int, int>> aStarSearch(char grid[n][n], int srcX, int srcY
 
     priority_queue<Node, vector<Node>, comp> openList; // 按 f 值排序
     openList.push(nodes[i][j]);
-    
+
     while(!openList.empty())
     {
+
         Node node = openList.top();
         openList.pop();
         i = node.x;
@@ -114,9 +115,13 @@ std::vector<std::pair<int, int>> aStarSearch(char grid[n][n], int srcX, int srcY
             int newX = i + dx[k];
             int newY = j + dy[k];
 
+
             // 找到目的地
             if(isDestination(newX, newY, destX, destY))
             {
+                nodes[newX][newY].parentX = i;
+                nodes[newX][newY].parentY = j;
+
                 // 给出路径
                 vector<pair<int, int>> path;
                 while(!(nodes[newX][newY].parentX == newX && nodes[newX][newY].parentY == newY))
@@ -133,11 +138,12 @@ std::vector<std::pair<int, int>> aStarSearch(char grid[n][n], int srcX, int srcY
             }
             
             // Check if the node can be calculated.
-            if(!isUnBlocked(grid, newX, newY) && !closedList[newX][newY])
+            if(isUnBlocked(grid, newX, newY) && !closedList[newX][newY])
             {
-                float gNew = nodes[i][i].g + 1.0;
+                float gNew = nodes[i][j].g + 1.0;
                 float hNew = calculateH(newX, newY, destX, destY);
                 float fNew = gNew + hNew;
+
 
                 if(nodes[newX][newY].f > fNew)
                 {
@@ -156,5 +162,6 @@ std::vector<std::pair<int, int>> aStarSearch(char grid[n][n], int srcX, int srcY
     }
     // Return an empty path when failed.
     return vector<pair<int, int>>();
+    // return {{2, 7}};
 
 }
