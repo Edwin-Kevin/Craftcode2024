@@ -12,9 +12,9 @@ int nearest_berth(int x, int y)
     
     int nearestid;
     int min = 400;
-    for(int i = 0; i < berth_num; ++i)
+    for(int i = 0; i < berth_num; i++)
     {
-        if(abs(berth[i].x - x) + abs(berth[i].y - y) < min)
+        if(((abs(berth[i].x - x) + abs(berth[i].y - y)) < min) && berth[i].boat_index > 0)
         {
             min = abs(berth[i].x - x) + abs(berth[i].y - y);
             nearestid = i;

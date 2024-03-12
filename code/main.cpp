@@ -54,6 +54,7 @@ void Init()
         int id;
         scanf("%d", &id);
         scanf("%d%d%d%d", &berth[id].x, &berth[id].y, &berth[id].transport_time, &berth[id].loading_speed);
+        // berth[i].boat_index = -1;
         // 计算该泊位的权重
         berth[i].weight = -200 * berth[i].loading_speed + 1 * berth[i].transport_time;
         // 将权重存入集合
@@ -147,6 +148,31 @@ int main()
         //     printf("move %d %d\n", i, rand() % 4);
         // }
 
+//---------------------------------------BERTH---------------------------------------//
+        // 输出最小的五个 weight 以及它们对应的 berth 索引，从而选择五个最好的港口
+        int cnt = 0; // 轮船编号
+        for (int weight : minWeights) {
+#ifdef LOG
+            logFile << "boatcnt: " << cnt << " weight: " << weight << endl;
+#endif
+            auto range = weightToIndex.equal_range(weight); // 在 weightToIndex 中查找 weight 值
+            // range.first 和 range.second 分别是迭代器，指向匹配的第一个元素和超出匹配元素序列的元素
+            for (auto it = range.first; it != range.second; ++it) {
+                int berthIndex = it -> second;
+                // 船只在虚拟点且可移动
+                if(boat[cnt].status == BOAT_STATUS_NORMAL && boat[cnt].pos == -1)
+                {
+                    berth[berthIndex].boat_index = cnt;
+                    printf("ship %d %d\n", cnt, berthIndex);
+#ifdef LOG
+                    logFile << "ship " << cnt << " " << berthIndex << std::endl;
+#endif
+                }
+                ++cnt;
+            }
+            
+        }
+
 //-----------------------------------ROBOT------------------------------------------------//
         // 测试 A*, 这里将机器人 0 移动到最近的泊位
         if(frame == 1)
@@ -234,31 +260,6 @@ int main()
             paths[0] = aStarSearch(ch, robot[0].x, robot[0].y,
             berth[robot[0].nearestberth_index].x, berth[robot[0].nearestberth_index].y);
             paths[0].erase(paths[0].begin());
-        }
-
-//---------------------------------------BERTH---------------------------------------//
-        // 输出最小的五个 weight 以及它们对应的 berth 索引，从而选择五个最好的港口
-        int cnt = 0; // 轮船编号
-        for (int weight : minWeights) {
-#ifdef LOG
-            logFile << "boatcnt: " << cnt << " weight: " << weight << endl;
-#endif
-            auto range = weightToIndex.equal_range(weight); // 在 weightToIndex 中查找 weight 值
-            // range.first 和 range.second 分别是迭代器，指向匹配的第一个元素和超出匹配元素序列的元素
-            for (auto it = range.first; it != range.second; ++it) {
-                int berthIndex = it -> second;
-                // 船只在虚拟点且可移动
-                if(boat[cnt].status == BOAT_STATUS_NORMAL && boat[cnt].pos == -1)
-                {
-                    berth[berthIndex].boat_index = cnt;
-                    printf("ship %d %d\n", cnt, berthIndex);
-#ifdef LOG
-                    logFile << "ship " << cnt << " " << berthIndex << std::endl;
-#endif
-                }
-                ++cnt;
-            }
-            
         }
 
 //-----------------------------------BOAT------------------------------------//

@@ -19,7 +19,7 @@ struct Berth
     int transport_time;
     int loading_speed;
     int weight;
-    int boat_index;
+    int boat_index = -1;
     int goods = 0;
     Berth(){}
     Berth(int x, int y, int transport_time, int loading_speed) {
