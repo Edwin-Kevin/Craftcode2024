@@ -47,6 +47,18 @@ float calculateH(int x, int y, int destX, int destY)
 bool isUnBlocked(char grid[n][n], int x, int y)
 {
     if(x >= 0 && x < n && y >= 0 && y < n && (grid[x][y] == '.' || grid[x][y] == 'A' || grid[x][y] == 'B'))
+    // if(x >= 0 && x < n && y >= 0 && y < n && (grid[x][y] == '.' || grid[x][y] == 'B'))
+    {
+        return true;
+    }
+    return false;
+}
+
+// 调试使用
+bool isUnBlocked_temp(char grid[n][n], int x, int y)
+{
+    // if(x >= 0 && x < n && y >= 0 && y < n && (grid[x][y] == '.' || grid[x][y] == 'A' || grid[x][y] == 'B'))
+    if(x >= 0 && x < n && y >= 0 && y < n && (grid[x][y] == '.' || grid[x][y] == 'B'))
     {
         return true;
     }
@@ -142,7 +154,7 @@ std::vector<std::pair<int, int>> aStarSearch(char grid[n][n], int srcX, int srcY
             }
             
             // Check if the node can be calculated.
-            if(isUnBlocked(grid, newX, newY) && !closedList[newX][newY])
+            if(isUnBlocked_temp(grid, newX, newY) && !closedList[newX][newY])
             {
                 float gNew = nodes[i][j].g + 1.0;
                 float hNew = calculateH(newX, newY, destX, destY);

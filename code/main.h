@@ -6,6 +6,7 @@
 #include "boat.h"
 #include "astar.h"
 #include "map.h"
+#include "goods.h"
 
 
 using namespace std;

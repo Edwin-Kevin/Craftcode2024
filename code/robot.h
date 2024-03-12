@@ -12,7 +12,7 @@
 
 /* 
     @brief: 机器人
-    @params: x,y: 机器人坐标; goods: 是否携带物品;
+    @params: x,y: 机器人坐标; goods: 是否携带物品(0 表示未携带，1 表示已携带);
              status: 状态（0 表示恢复状态，1 表示正常运行状态）
     @ret: none
 */
@@ -26,7 +26,8 @@ struct Robot
         x = startX;
         y = startY;
     }
-    int nearestberth_index;
+    int nearestberth_index = -1;
+    int nearestgoods_index = -1;
 };
 
 /* 
