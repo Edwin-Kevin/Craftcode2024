@@ -108,6 +108,10 @@ std::vector<std::pair<int, int>> aStarSearch(char grid[n][n], int srcX, int srcY
         openList.pop();
         i = node.x;
         j = node.y;
+        if(closedList[i][j])
+        {
+            continue;
+        }
         closedList[i][j] = true;
 
         for(int k = 0; k < 4; ++k)
@@ -145,17 +149,14 @@ std::vector<std::pair<int, int>> aStarSearch(char grid[n][n], int srcX, int srcY
                 float fNew = gNew + hNew;
 
 
-                if(nodes[newX][newY].f > fNew)
+                if(nodes[newX][newY].f > fNew || nodes[newX][newY].f == FLT_MAX)
                 {
-                    if(nodes[newX][newY].f == FLT_MAX)
-                    {
-                        openList.push(nodes[newX][newY]);
-                    }
                     nodes[newX][newY].f = fNew;
                     nodes[newX][newY].g = gNew;
                     nodes[newX][newY].h = hNew;
                     nodes[newX][newY].parentX = i;
                     nodes[newX][newY].parentY = j;
+                    openList.push(nodes[newX][newY]);
                 }
             }
         }
