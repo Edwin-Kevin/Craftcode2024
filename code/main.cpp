@@ -143,6 +143,7 @@ int Input()
                 goods[j].y = y;
                 goods[j].val = val;
                 goods[j].status = 0;
+                goods[j].robotindex = -1;
                 break;
             }
         }
@@ -216,14 +217,8 @@ int main()
         // 检查路径列表是否为空
         if(!paths[0].empty())
         {
-#ifdef LOG
-            logFile << "Line 222 hit." << endl;
-#endif
             // 以下此句有问题
             pair<int, int> next_step = paths[0].front();
-#ifdef LOG
-            logFile << "Line 227: " << next_step.first << ", " << next_step.second << endl;
-#endif
             paths[0].erase(paths[0].begin());
 #ifdef LOG
             logFile << "Robot 0 Next step: (" << next_step.first << ", " << next_step.second << ")" << endl;
@@ -282,7 +277,13 @@ int main()
                     if((paths[0].size() > (goods[robot[0].nearestgoods_index].remaintime)) || paths[0].size() == 0)
                     {
                         paths[0].clear();
-                        robot[0].nearestgoods_index ++;
+                        if(robot[0].nearestgoods_index > 97)
+                        {
+                            robot[0].nearestgoods_index = 0;
+                        }
+                        else{
+                            robot[0].nearestgoods_index = robot[0].nearestgoods_index ++;
+                        }
                         // robot[0].nearestgoods_index = selectGoods(0, robot[0].nearestgoods_index + 1);
                         // paths[0] = aStarSearch(ch, robot[0].x, robot[0].y,
                         //     goods[robot[0].nearestgoods_index].x, goods[robot[0].nearestgoods_index].y);
@@ -297,11 +298,9 @@ int main()
         else if(robot[0].x == berth[robot[0].nearestberth_index].x && 
             robot[0].y == berth[robot[0].nearestberth_index].y && robot[0].goods == 1)
         {
-#ifdef LOG
-            logFile << "Line 285 hit." << endl;
-#endif
             printf("pull %d\n", 0);
             goods[robot[0].nearestgoods_index].status = 2;
+            goods[robot[0].nearestgoods_index].robotindex = -1;
             robot[0].nearestgoods_index = -1;
             robot[0].goods = 0;
 #ifdef LOG
@@ -326,9 +325,6 @@ int main()
         }
         // 机器人空闲，分配新任务
         else{
-#ifdef LOG
-            logFile << "Line 314 hit." << endl;
-#endif
             if(robot[0].goods == 1)
             {
                 // 带了货物，去泊位
@@ -348,10 +344,16 @@ int main()
                 if(paths[0].size() > (goods[robot[0].nearestgoods_index].remaintime) || paths[0].size() == 0)
                 {
 #ifdef LOG
-                    logFile << "paths[0].size(): " << paths[0].size() << endl;
+                    // logFile << "paths[0].size(): " << paths[0].size() << endl;
 #endif
                     paths[0].clear();
-                    robot[0].nearestgoods_index > 100 ? robot[0].nearestgoods_index = 0 : robot[0].nearestgoods_index ++;
+                    if(robot[0].nearestgoods_index > 97)
+                    {
+                        robot[0].nearestgoods_index = 0;
+                    }
+                    else{
+                        robot[0].nearestgoods_index = robot[0].nearestgoods_index ++;
+                    }
 
                     // robot[0].nearestgoods_index = selectGoods(0, robot[0].nearestgoods_index + 1);
                     // paths[0] = aStarSearch(ch, robot[0].x, robot[0].y,
@@ -371,7 +373,6 @@ int main()
                     }
                     logFile << endl;
                 }
-                logFile << "Line 372 hit. " << endl;
 #endif
             }
         }
@@ -394,6 +395,10 @@ int main()
             if(goods[i].remaintime > 0 && goods[i].status == 0)
             {
                 goods[i].remaintime --;
+                if(goods[i].remaintime <= 0)
+                {
+                    goods[i].status = 2;
+                }
             }
         }
 
