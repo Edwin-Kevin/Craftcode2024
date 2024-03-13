@@ -2,7 +2,7 @@
 
 /* 
     @brief: 在初始化中寻找机器人的位置
-    @params: str: 
+    @params: str: 地图每一行的首位指针
     @ret: std::vector<int>
 */
 std::vector<int> GetRobotPlace(char* str) 

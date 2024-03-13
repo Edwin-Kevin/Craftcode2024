@@ -47,7 +47,6 @@ float calculateH(int x, int y, int destX, int destY)
 bool isUnBlocked(char grid[n][n], int x, int y)
 {
     if(x >= 0 && x < n && y >= 0 && y < n && (grid[x][y] == '.' || grid[x][y] == 'A' || grid[x][y] == 'B'))
-    // if(x >= 0 && x < n && y >= 0 && y < n && (grid[x][y] == '.' || grid[x][y] == 'B'))
     {
         return true;
     }
