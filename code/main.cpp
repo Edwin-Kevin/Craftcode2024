@@ -9,7 +9,7 @@ int gds[n][n]; // 存储当前货物位置(内容为货物编号，-1 为无货)
 int boat_capacity; // 船只容量
 Berth berth[berth_num];
 Robot robot[robot_num];
-Goods goods[100];
+Goods goods[210];
 // set 可以自动排序元素，使元素保持升序
 set<int> minWeights;
 // 使用 multimap 来存储权重值和对应的 berth 索引
@@ -234,7 +234,7 @@ int Input()
     {
         int x, y, val;
         scanf("%d%d%d", &x, &y, &val);
-        for(int j = 0; j < 100; j++)
+        for(int j = 0; j < 210; j++)
         {
             // 消失的货物和运输完成的货物可以被释放
             if(goods[j].remaintime <= 0 || goods[j].status == 2)
@@ -267,7 +267,7 @@ int Input()
         scanf("%d%d%d%d", &robot[i].goods, &robot[i].x, &robot[i].y, &robot[i].status);
         int x = robot[i].x;
         int y = robot[i].y;
-        robotmap[x][y] = 1;
+        robotmap[x][y] = 2;
 
         if(robot[i].goods == 1)
         {
@@ -407,6 +407,8 @@ int main()
                     {
                         robot[robotcnt].mbx = next_step.first;
                         robot[robotcnt].mby = next_step.second;
+                        // 标记机器人下一帧的位置
+                        robotmap[next_step.first][next_step.second] = 1;
                         if((next_step.first - robot[robotcnt].x) == 1)
                         {
                             printf("move %d %d\n", robotcnt, ROBOT_MOVE_DOWN);
@@ -477,7 +479,7 @@ int main()
 
 //----------------------------------GOODS-----------------------------------//
         // 更新每一个货物的存活时间
-        for(int i = 0; i < 100; i++)
+        for(int i = 0; i < 210; i++)
         {
             if(goods[i].remaintime > 0 && goods[i].status == 0)
             {
