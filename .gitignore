@@ -2,3 +2,4 @@ WindowsRelease/
 *.vscode/
 *build/
 *.zip
+*.idea/

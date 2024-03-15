@@ -71,8 +71,8 @@ bool isUnBlocked_temp(char grid[n][n], int x, int y)
 */
 std::vector<std::pair<int, int>> aStarSearch(char grid[n][n], int srcX, int srcY, int destX, int destY)
 {
-    // 若起点或终点不可达
-    if(!isUnBlocked(grid, srcX, srcY) || !isUnBlocked(grid, destX, destY))
+    // 若终点不可达
+    if(!isUnBlocked(grid, destX, destY))
     {
         return std::vector<std::pair<int, int>>();
         // return {{isUnBlocked(grid, srcX, srcY), isUnBlocked(grid, destX, destY)}, {1, 2}};

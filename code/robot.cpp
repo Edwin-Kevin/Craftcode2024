@@ -3,7 +3,7 @@
 /* 
     @brief: 在初始化中寻找机器人的位置
     @params: str: 地图每一行的首位指针
-    @ret: std::vector<int>
+    @ret: 此行地图中机器人的纵坐标
 */
 std::vector<int> GetRobotPlace(char* str) 
 {
@@ -18,4 +18,56 @@ std::vector<int> GetRobotPlace(char* str)
         position++; // 移动到下一个位置继续搜索
     }
     return positions;
+}
+
+// 正常移动，返回1
+// 如果没移动，返回0
+// 如果对向碰撞，需要避让，得返回-1，主函数重新算路线
+int robotmove(int (&robotmap)[n][n], int (&robotmap_next)[n][n], int robotid, int x, int y, int mhx, int mhy)
+{
+    // 移动距离合法
+    if((abs(x - mhx) + abs(y - mhy)) == 1)
+    {
+        // 新位置下一帧没有机器人，且对向没有机器人过来
+        if(robotmap_next[mhx][mhy] == -1 && robotmap_next[x][y] == -1)
+        {
+            // 标记新位置
+            robotmap_next[mhx][mhy] = robotid;
+            /*这里发送移动指令*/
+            return 1;
+        }
+        // 新位置下一帧有横向路过机器人，避让
+        else if(robotmap_next[mhx][mhy] >= 0 && robotmap_next[x][y] == -1)
+        {
+            robotmap_next[x][y] = robotid;
+            /*停一帧*/
+            return 0;
+        }
+        // 新位置来了个疑似对撞的，这里原位置下一帧有机器人
+        else if(robotmap_next[x][y] >= 0 && robotmap[mhx][mhy] >= 0)
+        {
+            // 还真是对撞，我闪
+            if(robotmap_next[x][y] == robotmap[mhx][mhy])
+            {
+                return -1;
+            }
+            // 不是碰撞，真是惊险，继续走起
+            else if(robotmap_next[mhx][mhy] == -1)
+            {
+                // 标记新位置
+                robotmap_next[mhx][mhy] = robotid;
+                /*这里发送移动指令*/
+                return 1;
+            }
+            // 虽然不是碰撞，但是下一个位置已经被抢了
+            else if(robotmap_next[mhx][mhy] >= 0)
+            {
+                return -1;
+            }
+        }
+        else {
+            return  -1;
+        }
+    }
+    return -1;
 }

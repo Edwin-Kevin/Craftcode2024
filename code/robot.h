@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <cstring>
 #include <vector>
+#include "map.h"
 
 #define ROBOT_MOVE_RIGHT  0
 #define ROBOT_MOVE_LEFT   1
@@ -36,6 +37,13 @@ struct Robot
 /* 
     @brief: 在初始化中寻找机器人的位置
     @params: str: 地图每一行的首位指针
-    @ret: std::vector<int>
+    @ret: 此行地图中机器人的纵坐标
 */
 std::vector<int> GetRobotPlace(char* str);
+/* 
+    @brief: 根据给出的坐标移动机器人
+    @params: robotid: 机器人编号; x, y: 机器人的当前位置; mhx, mhy: 机器人的下一帧位置
+    @ret: none
+*/
+int robotmove(int (&robotmap)[n][n], int robotid, int x, int y, int mhx, int mhy);
+int robotmove_nocheck();

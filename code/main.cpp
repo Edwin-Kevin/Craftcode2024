@@ -1,10 +1,19 @@
 #define LOG  // Comment this line if no need for log file.
 #include "main.h"
 
+/* 
+TODO: 1.如果跳帧，得修正计算船的装货数量和货物的剩余存留时长
+2.机器人运动指令函数，里面包含碰撞机制(如果返回-1，需要重新astar然后再调用移动函数(while astar == -1))
+ astar 也要改成考虑其他机器人下一帧位置
+3.把去港口路线上经过的点都标记为距离这个港口最近 
+4.最近货物的选择：随机选两个直线距离最近的，然后计算实际距离
+5.限制每一帧最多进行 10 次 A*
+*/
+
 char ch[n][n]; // 存储地图
 bool availmap[n][n]; // 记录可达点的地图（包含陆地、机器人、港口位置）
-int robotmap[n][n];  // 存储机器人位置的地图, 0 为空, 1 为下一帧有机器人, 2 为当前有机器人，每帧更新
-bool roadmap[n][n]; // 给寻路算法使用的路径规划图(每帧结合 availmap 和 robotmap 计算)
+int robotmap[n][n];  // 存储当前机器人位置的地图, 内容为机器人的编号
+int robotmap_next[n][n]; // 存储下一帧机器人位置的地图, 内容为机器人的编号
 int gds[n][n]; // 存储当前货物位置(内容为货物编号，-1 为无货)
 int boat_capacity; // 船只容量
 Berth berth[berth_num];
@@ -35,8 +44,8 @@ int selectnearestGoods(int robot_index, int range)
     if(y_up < 0)    y_up = 0;
     // 边界右下角
     int x_right = robot[robot_index].x + range, y_down = robot[robot_index].y + range;
-    if(x_right > n) x_right = n;
-    if(y_down > n)  y_down = n;
+    if(x_right >= n) x_right = n - 1;
+    if(y_down >= n)  y_down = n - 1;
 
     for(int i = x_left; i <= x_right; ++i)
     {
@@ -256,7 +265,8 @@ int Input()
     {
         for(int j = 0; j < n; ++j)
         {
-            robotmap[i][j] = 0;
+            robotmap[i][j] = -1;
+            robotmap_next[i][j] = -1;
         }
     }
     // 获取机器人信息
@@ -267,7 +277,7 @@ int Input()
         scanf("%d%d%d%d", &robot[i].goods, &robot[i].x, &robot[i].y, &robot[i].status);
         int x = robot[i].x;
         int y = robot[i].y;
-        robotmap[x][y] = 2;
+        robotmap[x][y] = i;
 
         if(robot[i].goods == 1)
         {
@@ -405,10 +415,11 @@ int main()
                     // 下一步的规划合理
                     if((abs(next_step.first - robot[robotcnt].x) + abs(next_step.second - robot[robotcnt].y)) == 1)
                     {
+                        // 下面这两句根据robotmove()的返回结果变更吧
                         robot[robotcnt].mbx = next_step.first;
                         robot[robotcnt].mby = next_step.second;
                         // 标记机器人下一帧的位置
-                        robotmap[next_step.first][next_step.second] = 1;
+                        robotmap[next_step.first][next_step.second] = robotcnt;
                         if((next_step.first - robot[robotcnt].x) == 1)
                         {
                             printf("move %d %d\n", robotcnt, ROBOT_MOVE_DOWN);
