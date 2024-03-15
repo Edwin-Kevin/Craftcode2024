@@ -40,10 +40,17 @@ struct Robot
     @ret: 此行地图中机器人的纵坐标
 */
 std::vector<int> GetRobotPlace(char* str);
-/* 
-    @brief: 根据给出的坐标移动机器人
+/*
+    @brief: 检查后移动机器人
+    @params: robotmap, robotmap_next: 同 main.cpp; robotid: 机器人编号; x, y: 机器人当前位置;
+             mhx, mhy: 机器人想去位置
+    @ret: 0: 停一帧; 1: 移动成功; -1: 移动失败，main()中要重新算路线.
+*/
+int robotmove(int (&robotmap)[n][n], int (&robotmap_next)[n][n], int robotid, int x, int y, int mhx, int mhy);
+
+/*
+    @brief: 根据给出的坐标移动机器人(没有校验)
     @params: robotid: 机器人编号; x, y: 机器人的当前位置; mhx, mhy: 机器人的下一帧位置
     @ret: none
 */
-int robotmove(int (&robotmap)[n][n], int robotid, int x, int y, int mhx, int mhy);
-int robotmove_nocheck();
+void robotmove_nocheck(int robotid, int x, int y, int mhx, int mhy);

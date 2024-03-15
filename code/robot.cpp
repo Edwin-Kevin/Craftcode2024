@@ -20,9 +20,12 @@ std::vector<int> GetRobotPlace(char* str)
     return positions;
 }
 
-// 正常移动，返回1
-// 如果没移动，返回0
-// 如果对向碰撞，需要避让，得返回-1，主函数重新算路线
+/*
+    @brief: 检查后移动机器人
+    @params: robotmap, robotmap_next: 同 main.cpp; robotid: 机器人编号; x, y: 机器人当前位置;
+             mhx, mhy: 机器人想去位置
+    @ret: 0: 停一帧; 1: 移动成功; -1: 移动失败，main()中要重新算路线.
+*/
 int robotmove(int (&robotmap)[n][n], int (&robotmap_next)[n][n], int robotid, int x, int y, int mhx, int mhy)
 {
     // 移动距离合法
@@ -34,6 +37,7 @@ int robotmove(int (&robotmap)[n][n], int (&robotmap_next)[n][n], int robotid, in
             // 标记新位置
             robotmap_next[mhx][mhy] = robotid;
             /*这里发送移动指令*/
+            robotmove_nocheck(robotid, x, y, mhx, mhy);
             return 1;
         }
         // 新位置下一帧有横向路过机器人，避让
@@ -43,7 +47,7 @@ int robotmove(int (&robotmap)[n][n], int (&robotmap_next)[n][n], int robotid, in
             /*停一帧*/
             return 0;
         }
-        // 新位置来了个疑似对撞的，这里原位置下一帧有机器人
+        // 新位置来了个疑似对撞的，原位置下一帧有机器人
         else if(robotmap_next[x][y] >= 0 && robotmap[mhx][mhy] >= 0)
         {
             // 还真是对撞，我闪
@@ -57,6 +61,7 @@ int robotmove(int (&robotmap)[n][n], int (&robotmap_next)[n][n], int robotid, in
                 // 标记新位置
                 robotmap_next[mhx][mhy] = robotid;
                 /*这里发送移动指令*/
+                robotmove_nocheck(robotid, x, y, mhx, mhy);
                 return 1;
             }
             // 虽然不是碰撞，但是下一个位置已经被抢了
@@ -65,9 +70,42 @@ int robotmove(int (&robotmap)[n][n], int (&robotmap_next)[n][n], int robotid, in
                 return -1;
             }
         }
+        // robotmap_next[x][y] >= 0 && robotmap[mhx][mhy] == -1
+        // 虽然原位置要被占，但是新位置能去
         else {
-            return  -1;
+            // 标记新位置
+            robotmap_next[mhx][mhy] = robotid;
+            /*这里发送移动指令*/
+            robotmove_nocheck(robotid, x, y, mhx, mhy);
+            return 1;
         }
     }
     return -1;
+}
+
+/*
+    @brief: 根据给出的坐标移动机器人(没有校验)
+    @params: robotid: 机器人编号; x, y: 机器人的当前位置; mhx, mhy: 机器人的下一帧位置
+    @ret: none
+*/
+void robotmove_nocheck(int robotid, int x, int y, int mhx, int mhy)
+{
+    int dx = mhx - x;
+    int dy = mhy - y;
+    if(dx == -1)
+    {
+        printf("move %d %d", robotid, ROBOT_MOVE_UP);
+    }
+    else if(dx == 1)
+    {
+        printf("move %d %d", robotid, ROBOT_MOVE_DOWN);
+    }
+    else if(dy == -1)
+    {
+        printf("move %d %d", robotid, ROBOT_MOVE_LEFT);
+    }
+    else if(dy == 1)
+    {
+        printf("move %d %d", robotid, ROBOT_MOVE_RIGHT);
+    }
 }

@@ -4,7 +4,8 @@
 /* 
 TODO: 1.如果跳帧，得修正计算船的装货数量和货物的剩余存留时长
 2.机器人运动指令函数，里面包含碰撞机制(如果返回-1，需要重新astar然后再调用移动函数(while astar == -1))
- astar 也要改成考虑其他机器人下一帧位置
+ astar 也要改成考虑其他机器人下一帧位置，如果重新计算没结果，把 next_map 中原位置赋robotid
+ 碰撞不可避免，引入碰撞机制，机器人恢复状态清空对应paths，恢复后重算paths
 3.把去港口路线上经过的点都标记为距离这个港口最近 
 4.最近货物的选择：随机选两个直线距离最近的，然后计算实际距离
 5.限制每一帧最多进行 10 次 A*
@@ -413,44 +414,9 @@ int main()
                     logFile << "Robot " << robotcnt << " Next step: (" << next_step.first << ", " << next_step.second << ")" << endl;
 #endif
                     // 下一步的规划合理
-                    if((abs(next_step.first - robot[robotcnt].x) + abs(next_step.second - robot[robotcnt].y)) == 1)
+                    if(robotmove(robotmap, robotmap_next, robotcnt, robot[robotcnt].x, robot[robotcnt].y, next_step.first, next_step.second) < 0)
+                    // 移动失败，要重新算
                     {
-                        // 下面这两句根据robotmove()的返回结果变更吧
-                        robot[robotcnt].mbx = next_step.first;
-                        robot[robotcnt].mby = next_step.second;
-                        // 标记机器人下一帧的位置
-                        robotmap[next_step.first][next_step.second] = robotcnt;
-                        if((next_step.first - robot[robotcnt].x) == 1)
-                        {
-                            printf("move %d %d\n", robotcnt, ROBOT_MOVE_DOWN);
-#ifdef LOG
-                            logFile << "move " << robotcnt << " " << ROBOT_MOVE_DOWN << endl;
-#endif
-                        }
-                        else if((next_step.first - robot[robotcnt].x) == -1)
-                        {
-                            printf("move %d %d\n", robotcnt, ROBOT_MOVE_UP);
-#ifdef LOG
-                            logFile << "move " << robotcnt << " " << ROBOT_MOVE_UP << endl;
-#endif
-                        }
-                        else if((next_step.second - robot[robotcnt].y) == 1)
-                        {
-                            printf("move %d %d\n", robotcnt, ROBOT_MOVE_RIGHT);
-#ifdef LOG
-                            logFile << "move " << robotcnt << " " << ROBOT_MOVE_RIGHT << endl;
-#endif
-                        }
-                        else if((next_step.second - robot[robotcnt].y) == -1)
-                        {
-                            printf("move %d %d\n", robotcnt, ROBOT_MOVE_LEFT);
-#ifdef LOG
-                            logFile << "move " << robotcnt << " " << ROBOT_MOVE_LEFT << endl;
-#endif
-                        }
-                    }
-                    else{
-                        // 路线规划不合理，重新计算
                         if(robot[robotcnt].goods == 1)
                         {
                             // 带了货物，去泊位
@@ -464,6 +430,11 @@ int main()
                         {
                             // 没带货物，去找货物
                             robot[robotcnt].nearestgoods_index = selectnearestGoods(robotcnt, 1);
+                        }
+                        // 本次移动的彻底失败，凉拌
+                        if(paths[robotcnt].size() <= 0 || (robotmove(robotmap, robotmap_next, robotcnt, robot[robotcnt].x, robot[robotcnt].y, next_step.first, next_step.second) < 0))
+                        {
+                            robotmap_next[robot[robotcnt].x][robot[robotcnt].y] = robotcnt;
                         }
                     }
                 }
