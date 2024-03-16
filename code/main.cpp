@@ -2,9 +2,7 @@
 #include "main.h"
 
 /* 
-TODO: 1.如果跳帧，得修正计算船的装货数量和货物的剩余存留时长
-2.机器人运动指令函数，里面包含碰撞机制(如果返回-1，需要重新astar然后再调用移动函数(while astar == -1))
- astar 也要改成考虑其他机器人下一帧位置，如果重新计算没结果，把 next_map 中原位置赋robotid
+TODO: 
  碰撞不可避免，引入碰撞机制，机器人恢复状态清空对应paths，恢复后重算paths
 3.把去港口路线上经过的点都标记为距离这个港口最近 
 4.最近货物的选择：随机选两个直线距离最近的，然后计算实际距离
@@ -352,16 +350,23 @@ int main()
         while(true) {
             int actioned_bot = 0;
             for (int robotcnt = 0; robotcnt < 5; robotcnt++) {
-                if (robot[robotcnt].enable && !robot[robotcnt].actioned) {
+                if (robot[robotcnt].enable && !robot[robotcnt].actioned && robot[robotcnt].status == 1) {
 #ifdef LOG
                     logFile << "Now check robot " << robotcnt << endl;
 #endif
                     // 机器人闲着
                     if (paths[robotcnt].empty()) {
+#ifdef LOG
+                        logFile << "360 hit." << endl;
+#endif
                         // 机器人运货到泊位了
+                        /* 这里有概率出现 berth[-1] 导致程序爆炸，修！*/
                         if (robot[robotcnt].x == berth[robot[robotcnt].nearestberth_index].x &&
                             robot[robotcnt].y == berth[robot[robotcnt].nearestberth_index].y &&
                             robot[robotcnt].goods == 1) {
+#ifdef LOG
+                            logFile << "367 hit.\n";
+#endif
                             printf("pull %d\n", robotcnt);
                             actioned_bot++;
                             robot[robotcnt].actioned = true;
@@ -380,6 +385,10 @@ int main()
                                  robot[robotcnt].goods == 0 &&
                                  goods[robot[robotcnt].nearestgoods_index].remaintime > 0 &&
                                  goods[robot[robotcnt].nearestgoods_index].status == 0) {
+#ifdef LOG
+                            logFile << "388 hit.\n";
+#endif
+
                             printf("get %d\n", robotcnt);
                             robot[robotcnt].nearestgoods_index = -1;
                             robot[robotcnt].goods = 1;
@@ -397,6 +406,9 @@ int main()
                         }
                             // 机器人空闲，分配新任务
                         else {
+#ifdef LOG
+                            logFile << "402 hit.\n";
+#endif
                             if (robot[robotcnt].goods == 1 && robot[robotcnt].nearestberth_index == -1) {
                                 // 刚带了货物，去泊位
                                 robot[robotcnt].nearestberth_index = nearest_berth(robot[robotcnt].x,
@@ -410,7 +422,8 @@ int main()
 #ifdef LOG
                                 logFile << "nearest berth: " << robot[robotcnt].nearestberth_index << endl;
 #endif
-                            } else if (robot[robotcnt].goods == 0 && robot[robotcnt].nearestgoods_index == -1) {
+                            } 
+                            else if (robot[robotcnt].goods == 0 && robot[robotcnt].nearestgoods_index == -1) {
                                 // 从泊位出发，去找货物
                                 robot[robotcnt].nearestgoods_index = selectnearestGoods(robotcnt, 1);
 #ifdef LOG
