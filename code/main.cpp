@@ -7,6 +7,8 @@ TODO:
 3.把去港口路线上经过的点都标记为距离这个港口最近 
 4.最近货物的选择：随机选两个直线距离最近的，然后计算实际距离
 5.限制每一帧最多进行 10 次 A*
+bug: 第一帧只有五个货物，修改货物选择函数使得其不能无限递归；
+修改没有获取到货物的机器人的行为(nearestgoods_index为-1，置空paths)
 */
 
 char ch[n][n]; // 存储地图
@@ -50,7 +52,7 @@ int selectnearestGoods(int robot_index, int range)
     {
         int j = y_up;
         // 有货且可达
-        if(gds[i][j] > 0 && availmap[i][j] && goods[gds[i][j]].robotindex < 0)
+        if(gds[i][j] >= 0 && availmap[i][j] && goods[gds[i][j]].robotindex < 0)
         {
             paths[robot_index] = aStarSearch(ch, robot[robot_index].x, robot[robot_index].y, i, j);
             if(paths[robot_index].empty())
@@ -358,61 +360,37 @@ int main()
                     if (paths[robotcnt].empty()) {
 #ifdef LOG
                         logFile << "360 hit." << endl;
+                        logFile << "nearestberth_index: " << robot[robotcnt].nearestberth_index << endl;
+                        logFile << "nearestgoods_index: " << robot[robotcnt].nearestgoods_index << endl;
 #endif
-                        // 机器人运货到泊位了
+                        // 机器人分配泊位了
                         /* 这里有概率出现 berth[-1] 导致程序爆炸，修！*/
-                        if (robot[robotcnt].x == berth[robot[robotcnt].nearestberth_index].x &&
-                            robot[robotcnt].y == berth[robot[robotcnt].nearestberth_index].y &&
-                            robot[robotcnt].goods == 1) {
+                        if(robot[robotcnt].nearestberth_index >= 0)
+                        {
+                            logFile << "test" << endl;
+                            if (robot[robotcnt].x == berth[robot[robotcnt].nearestberth_index].x &&
+                                robot[robotcnt].y == berth[robot[robotcnt].nearestberth_index].y &&
+                                robot[robotcnt].goods == 1) {
 #ifdef LOG
-                            logFile << "367 hit.\n";
+                                logFile << "370 hit." << endl;;
 #endif
-                            printf("pull %d\n", robotcnt);
-                            actioned_bot++;
-                            robot[robotcnt].actioned = true;
-                            goods[robot[robotcnt].nearestgoods_index].status = 2;
-                            goods[robot[robotcnt].nearestgoods_index].robotindex = -1;
-                            robot[robotcnt].nearestberth_index = -1;
-                            robot[robotcnt].goods = 0;
+                                printf("pull %d\n", robotcnt);
+                                actioned_bot++;
+                                robot[robotcnt].actioned = true;
+                                goods[robot[robotcnt].nearestgoods_index].status = 2;
+                                goods[robot[robotcnt].nearestgoods_index].robotindex = -1;
+                                // 卸货的同时清空最近货物和最近泊位的标记
+                                robot[robotcnt].nearestgoods_index = -1;
+                                robot[robotcnt].nearestberth_index = -1;
+                                robot[robotcnt].goods = 0;
 #ifdef LOG
-                            logFile << "Robot " << robotcnt << " reached the berth! " << endl;
-                            logFile << "pull " << robotcnt << endl;
+                                logFile << "Robot " << robotcnt << " reached the berth! " << endl;
+                                logFile << "pull " << robotcnt << endl;
 #endif
-                        }
-                            // 机器人到取货点了
-                        else if (robot[robotcnt].x == goods[robot[robotcnt].nearestgoods_index].x &&
-                                 robot[robotcnt].y == goods[robot[robotcnt].nearestgoods_index].y &&
-                                 robot[robotcnt].goods == 0 &&
-                                 goods[robot[robotcnt].nearestgoods_index].remaintime > 0 &&
-                                 goods[robot[robotcnt].nearestgoods_index].status == 0) {
-#ifdef LOG
-                            logFile << "388 hit.\n";
-#endif
-
-                            printf("get %d\n", robotcnt);
-                            robot[robotcnt].nearestgoods_index = -1;
-                            robot[robotcnt].goods = 1;
-                            actioned_bot++;
-                            robot[robotcnt].actioned = true;
-#ifdef LOG
-                            logFile << "Robot " << robotcnt << " reached the goods! " << endl;
-                            logFile << "robot[" << robotcnt << "]: (" << robot[robotcnt].x << ", " << robot[robotcnt].y
-                                    << ")" << endl;
-                            logFile << "goods: (" << goods[robot[robotcnt].nearestgoods_index].x;
-                            logFile << ", " << goods[robot[robotcnt].nearestgoods_index].y << ") ";
-                            logFile << "remaintime: " << goods[robot[robotcnt].nearestgoods_index].remaintime << endl;
-                            logFile << "get " << robotcnt << endl;
-#endif
-                        }
-                            // 机器人空闲，分配新任务
-                        else {
-#ifdef LOG
-                            logFile << "402 hit.\n";
-#endif
-                            if (robot[robotcnt].goods == 1 && robot[robotcnt].nearestberth_index == -1) {
-                                // 刚带了货物，去泊位
-                                robot[robotcnt].nearestberth_index = nearest_berth(robot[robotcnt].x,
-                                                                                   robot[robotcnt].y);
+                            }
+                            // 带了货物但没去港口
+                            else if(robot[robotcnt].goods == 1)
+                            {
                                 paths[robotcnt] = aStarSearch(ch, robot[robotcnt].x, robot[robotcnt].y,
                                                               berth[robot[robotcnt].nearestberth_index].x,
                                                               berth[robot[robotcnt].nearestberth_index].y);
@@ -422,20 +400,42 @@ int main()
 #ifdef LOG
                                 logFile << "nearest berth: " << robot[robotcnt].nearestberth_index << endl;
 #endif
-                            } 
-                            else if (robot[robotcnt].goods == 0 && robot[robotcnt].nearestgoods_index == -1) {
-                                // 从泊位出发，去找货物
-                                robot[robotcnt].nearestgoods_index = selectnearestGoods(robotcnt, 1);
+                            }
+                            else{
+                                robot[robotcnt].nearestberth_index = -1;
+                            }
+                        }
+                        // 机器人没取货但已经分配货物
+                        else if(robot[robotcnt].nearestgoods_index >= 0)
+                        {
+                            logFile << "test" << endl;
+                            // 拾取货物 
+                            if (robot[robotcnt].x == goods[robot[robotcnt].nearestgoods_index].x &&
+                                 robot[robotcnt].y == goods[robot[robotcnt].nearestgoods_index].y &&
+                                 robot[robotcnt].goods == 0 &&
+                                 goods[robot[robotcnt].nearestgoods_index].remaintime > 0 &&
+                                 goods[robot[robotcnt].nearestgoods_index].status == 0) {
 #ifdef LOG
-                                logFile << "nearestgoods_index: " << robot[robotcnt].nearestgoods_index << endl;
-                                if (paths[robotcnt].size() != 0) {
-                                    logFile << "goods(x, y): " << "(" << goods[robot[robotcnt].nearestgoods_index].x
-                                            << ", " << goods[robot[robotcnt].nearestgoods_index].y << ")" << endl;
-                                }
+                                logFile << "412 hit." << endl;
+#endif
+
+                                printf("get %d\n", robotcnt);
+                                robot[robotcnt].goods = 1;
+                                actioned_bot++;
+                                robot[robotcnt].actioned = true;
+                                robot[robotcnt].nearestberth_index = nearest_berth(robot[robotcnt].x, robot[robotcnt].y);
+#ifdef LOG
+                                logFile << "Robot " << robotcnt << " reached the goods! " << endl;
+                                logFile << "robot[" << robotcnt << "]: (" << robot[robotcnt].x << ", " << robot[robotcnt].y
+                                        << ")" << endl;
+                                logFile << "goods: (" << goods[robot[robotcnt].nearestgoods_index].x;
+                                logFile << ", " << goods[robot[robotcnt].nearestgoods_index].y << ") ";
+                                logFile << "remaintime: " << goods[robot[robotcnt].nearestgoods_index].remaintime << endl;
+                                logFile << "get " << robotcnt << endl;
 #endif
                             }
-                            else if(robot[robotcnt].goods == 0 && robot[robotcnt].nearestgoods_index >= 0)
-                            {
+                            // 要去拿货物但是还没到
+                            else if(robot[robotcnt].goods == 0){
                                 /* 执行A* */
                                 paths[robotcnt] = aStarSearch(ch, robot[robotcnt].x, robot[robotcnt].y,
                                                               goods[robot[robotcnt].nearestgoods_index].x,
@@ -443,15 +443,23 @@ int main()
                                 if(!paths[robotcnt].empty())
                                     paths[robotcnt].erase(paths[robotcnt].begin());
                             }
-                            else if(robot[robotcnt].goods == 1 && robot[robotcnt].nearestberth_index >= 0)
-                            {
-                                /* 执行A* */
-                                paths[robotcnt] = aStarSearch(ch, robot[robotcnt].x, robot[robotcnt].y,
-                                                              berth[robot[robotcnt].nearestberth_index].x,
-                                                              berth[robot[robotcnt].nearestberth_index].y);
-                                if(!paths[robotcnt].empty())
-                                    paths[robotcnt].erase(paths[robotcnt].begin());
+                            else{
+                                robot[robotcnt].goods == -1;
                             }
+                        }
+                        // 机器人空闲，分配新货物
+                        else {
+#ifdef LOG
+                            logFile << "447 hit." << endl;
+#endif
+                            robot[robotcnt].nearestgoods_index = selectnearestGoods(robotcnt, 1);
+#ifdef LOG
+                            logFile << "nearestgoods_index: " << robot[robotcnt].nearestgoods_index << endl;
+                            if (paths[robotcnt].size() != 0) {
+                                logFile << "goods(x, y): " << "(" << goods[robot[robotcnt].nearestgoods_index].x
+                                        << ", " << goods[robot[robotcnt].nearestgoods_index].y << ")" << endl;
+                            }
+#endif                        
                         }
                     }
                     // 路径列表非空
