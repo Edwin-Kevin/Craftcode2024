@@ -3,7 +3,8 @@
 
 /* 
 TODO: 
- 碰撞不可避免，引入碰撞机制，机器人恢复状态清空对应paths，恢复后重算paths
+1. 引入根据五大块的平均距离选择港口，并且平均距离的权重远高于港口运载速度
+2.碰撞不可避免，引入碰撞机制，机器人恢复状态清空对应paths，恢复后重算paths
 3.把去港口路线上经过的点都标记为距离这个港口最近 
 4.最近货物的选择：随机选两个直线距离最近的，然后计算实际距离
 5.限制每一帧最多进行 10 次 A*
@@ -69,7 +70,7 @@ int selectnearestGoods(int robot_index, int range)
             }
         }
         j = y_down;
-        if(gds[i][j] > 0 && availmap[i][j] && goods[gds[i][j]].robotindex < 0)
+        if(gds[i][j] >= 0 && availmap[i][j] && goods[gds[i][j]].robotindex < 0)
         {
             paths[robot_index] = aStarSearch(ch, robot[robot_index].x, robot[robot_index].y, i, j);
             if(paths[robot_index].empty())
@@ -91,7 +92,7 @@ int selectnearestGoods(int robot_index, int range)
     {
         int i = x_left;
         // 有货且可达
-        if(gds[i][j] > 0 && availmap[i][j] && goods[gds[i][j]].robotindex < 0)
+        if(gds[i][j] >= 0 && availmap[i][j] && goods[gds[i][j]].robotindex < 0)
         {
             paths[robot_index] = aStarSearch(ch, robot[robot_index].x, robot[robot_index].y, i, j);
             if(paths[robot_index].empty())
@@ -109,7 +110,7 @@ int selectnearestGoods(int robot_index, int range)
         }
         i = x_right;
         // 有货且可达
-        if(gds[i][j] > 0 && availmap[i][j] && goods[gds[i][j]].robotindex < 0)
+        if(gds[i][j] >= 0 && availmap[i][j] && goods[gds[i][j]].robotindex < 0)
         {
             paths[robot_index] = aStarSearch(ch, robot[robot_index].x, robot[robot_index].y, i, j);
             if(paths[robot_index].empty())
