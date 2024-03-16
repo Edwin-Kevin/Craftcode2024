@@ -94,18 +94,18 @@ void robotmove_nocheck(int robotid, int x, int y, int mhx, int mhy)
     int dy = mhy - y;
     if(dx == -1)
     {
-        printf("move %d %d", robotid, ROBOT_MOVE_UP);
+        printf("move %d %d\n", robotid, ROBOT_MOVE_UP);
     }
     else if(dx == 1)
     {
-        printf("move %d %d", robotid, ROBOT_MOVE_DOWN);
+        printf("move %d %d\n", robotid, ROBOT_MOVE_DOWN);
     }
     else if(dy == -1)
     {
-        printf("move %d %d", robotid, ROBOT_MOVE_LEFT);
+        printf("move %d %d\n", robotid, ROBOT_MOVE_LEFT);
     }
     else if(dy == 1)
     {
-        printf("move %d %d", robotid, ROBOT_MOVE_RIGHT);
+        printf("move %d %d\n", robotid, ROBOT_MOVE_RIGHT);
     }
 }

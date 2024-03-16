@@ -52,7 +52,7 @@ int selectnearestGoods(int robot_index, int range)
     {
         int j = y_up;
         // 有货且可达
-        if(gds[i][j] > 0 && availmap[i][j])
+        if(gds[i][j] > 0 && availmap[i][j] && goods[gds[i][j]].robotindex < 0)
         {
             paths[robot_index] = aStarSearch(ch, robot[robot_index].x, robot[robot_index].y, i, j);
             if(paths[robot_index].empty())
@@ -63,12 +63,13 @@ int selectnearestGoods(int robot_index, int range)
                 if(goods[gds[i][j]].remaintime > paths[robot_index].size())
                 {
                     paths[robot_index].erase(paths[robot_index].begin());
+                    goods[gds[i][j]].robotindex = robot_index;
                     return gds[i][j];
                 }
             }
         }
         j = y_down;
-        if(gds[i][j] > 0 && availmap[i][j])
+        if(gds[i][j] > 0 && availmap[i][j] && goods[gds[i][j]].robotindex < 0)
         {
             paths[robot_index] = aStarSearch(ch, robot[robot_index].x, robot[robot_index].y, i, j);
             if(paths[robot_index].empty())
@@ -79,6 +80,7 @@ int selectnearestGoods(int robot_index, int range)
                 if(goods[gds[i][j]].remaintime > paths[robot_index].size())
                 {
                     paths[robot_index].erase(paths[robot_index].begin());
+                    goods[gds[i][j]].robotindex = robot_index;
                     return gds[i][j];
                 }
             }
@@ -89,7 +91,7 @@ int selectnearestGoods(int robot_index, int range)
     {
         int i = x_left;
         // 有货且可达
-        if(gds[i][j] > 0 && availmap[i][j])
+        if(gds[i][j] > 0 && availmap[i][j] && goods[gds[i][j]].robotindex < 0)
         {
             paths[robot_index] = aStarSearch(ch, robot[robot_index].x, robot[robot_index].y, i, j);
             if(paths[robot_index].empty())
@@ -100,13 +102,14 @@ int selectnearestGoods(int robot_index, int range)
                 if(goods[gds[i][j]].remaintime > paths[robot_index].size())
                 {
                     paths[robot_index].erase(paths[robot_index].begin());
+                    goods[gds[i][j]].robotindex = robot_index;
                     return gds[i][j];
                 }
             }
         }
         i = x_right;
         // 有货且可达
-        if(gds[i][j] > 0 && availmap[i][j])
+        if(gds[i][j] > 0 && availmap[i][j] && goods[gds[i][j]].robotindex < 0)
         {
             paths[robot_index] = aStarSearch(ch, robot[robot_index].x, robot[robot_index].y, i, j);
             if(paths[robot_index].empty())
@@ -117,6 +120,7 @@ int selectnearestGoods(int robot_index, int range)
                 if(goods[gds[i][j]].remaintime > paths[robot_index].size())
                 {
                     paths[robot_index].erase(paths[robot_index].begin());
+                    goods[gds[i][j]].robotindex = robot_index;
                     return gds[i][j];
                 }
             }
@@ -287,14 +291,6 @@ int Input()
             // 将货物从地图上删去
             gds[goods[robot[i].nearestgoods_index].x][goods[robot[i].nearestgoods_index].y] = -1;
         }
-        if(!paths[i].empty())
-        {
-            if(robot[i].mbx != robot[i].x || robot[i].mby != robot[i].y)
-            {
-                // 说明机器人位置计算错了，要重算路线
-                paths[i].clear();
-            }
-        }
     }
 
     // 获取船信息
@@ -409,14 +405,18 @@ int main()
                 {
                     // 取出下一个坐标点
                     pair<int, int> next_step = paths[robotcnt].front();
-                    paths[robotcnt].erase(paths[robotcnt].begin());
 #ifdef LOG
                     logFile << "Robot " << robotcnt << " Next step: (" << next_step.first << ", " << next_step.second << ")" << endl;
 #endif
-                    // 下一步的规划合理
-                    if(robotmove(robotmap, robotmap_next, robotcnt, robot[robotcnt].x, robot[robotcnt].y, next_step.first, next_step.second) < 0)
+                    int move_result;
+                    move_result = robotmove(robotmap, robotmap_next, robotcnt, robot[robotcnt].x, robot[robotcnt].y, next_step.first, next_step.second);
+                    // 下一步移动失败
+                    if(move_result < 0)
                     // 移动失败，要重新算
                     {
+#ifdef LOG
+                        logFile << "Robot move failed." << endl;
+#endif
                         if(robot[robotcnt].goods == 1)
                         {
                             // 带了货物，去泊位
@@ -432,10 +432,19 @@ int main()
                             robot[robotcnt].nearestgoods_index = selectnearestGoods(robotcnt, 1);
                         }
                         // 本次移动的彻底失败，凉拌
-                        if(paths[robotcnt].size() <= 0 || (robotmove(robotmap, robotmap_next, robotcnt, robot[robotcnt].x, robot[robotcnt].y, next_step.first, next_step.second) < 0))
+                        if(paths[robotcnt].size() <= 0)
                         {
                             robotmap_next[robot[robotcnt].x][robot[robotcnt].y] = robotcnt;
                         }
+                        else{
+                            move_result = robotmove(robotmap, robotmap_next, robotcnt, robot[robotcnt].x,
+                                                     robot[robotcnt].y, next_step.first, next_step.second);
+                        }
+                    }
+                    if(move_result == 1)
+                    {
+                        // 移动成功，从路径中去除一个点
+                        paths[robotcnt].erase(paths[robotcnt].begin());
                     }
                 }
             }
