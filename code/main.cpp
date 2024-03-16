@@ -272,6 +272,10 @@ int Input()
         {
             robotmap[i][j] = -1;
             robotmap_next[i][j] = -1;
+            if(ch[i][j] == 'A')
+            {
+                ch[i][j] = '.';
+            }
         }
     }
     // 获取机器人信息
@@ -283,6 +287,8 @@ int Input()
         int x = robot[i].x;
         int y = robot[i].y;
         robotmap[x][y] = i;
+        ch[x][y] = 'A';
+        robot[i].actioned = false;
 
         if(robot[i].goods == 1)
         {
@@ -339,115 +345,110 @@ int main()
 
 //-----------------------------------ROBOT------------------------------------------------//
         // 测试阶段只开一个机器人
-        for(int robotcnt = 0; robotcnt < 1; robotcnt++)
-        {
-            if(robot[robotcnt].enable)
-            {
-                // 机器人闲着
-                if(paths[robotcnt].empty())
-                {
-                    // 机器人运货到泊位了
-                    if(robot[robotcnt].x == berth[robot[robotcnt].nearestberth_index].x && 
-                        robot[robotcnt].y == berth[robot[robotcnt].nearestberth_index].y && robot[robotcnt].goods == 1)
-                    {
-                        printf("pull %d\n", robotcnt);
-                        goods[robot[robotcnt].nearestgoods_index].status = 2;
-                        goods[robot[robotcnt].nearestgoods_index].robotindex = -1;
-                        robot[robotcnt].nearestgoods_index = -1;
-                        robot[robotcnt].goods = 0;
+        // 本轮执行动作的机器人数量，如果为0就可以退出循环了
+        while(true) {
+            int actioned_bot = 0;
+            for (int robotcnt = 0; robotcnt < 2; robotcnt++) {
+                if (robot[robotcnt].enable && !robot[robotcnt].actioned) {
+                    // 机器人闲着
+                    if (paths[robotcnt].empty()) {
+                        // 机器人运货到泊位了
+                        if (robot[robotcnt].x == berth[robot[robotcnt].nearestberth_index].x &&
+                            robot[robotcnt].y == berth[robot[robotcnt].nearestberth_index].y &&
+                            robot[robotcnt].goods == 1) {
+                            printf("pull %d\n", robotcnt);
+                            actioned_bot++;
+                            robot[robotcnt].actioned = true;
+                            goods[robot[robotcnt].nearestgoods_index].status = 2;
+                            goods[robot[robotcnt].nearestgoods_index].robotindex = -1;
+                            robot[robotcnt].nearestgoods_index = -1;
+                            robot[robotcnt].goods = 0;
 #ifdef LOG
-                        logFile << "Robot " << robotcnt<< " reached the berth! " << endl;
-                        logFile << "pull "<< robotcnt << endl;
+                            logFile << "Robot " << robotcnt << " reached the berth! " << endl;
+                            logFile << "pull " << robotcnt << endl;
 #endif
-                    }
-                    // 机器人到取货点了
-                    else if(robot[robotcnt].x == goods[robot[robotcnt].nearestgoods_index].x && 
-                        robot[robotcnt].y == goods[robot[robotcnt].nearestgoods_index].y && robot[robotcnt].goods == 0 && 
-                        goods[robot[robotcnt].nearestgoods_index].remaintime > 0 && goods[robot[robotcnt].nearestgoods_index].status == 0)
-                    {
-                        printf("get %d\n", robotcnt);
-#ifdef LOG
-                        logFile << "Robot " << robotcnt << " reached the goods! " << endl;
-                        logFile << "robot[" << robotcnt << "]: (" << robot[robotcnt].x << ", " << robot[robotcnt].y << ")" << endl;
-                        logFile << "goods: (" << goods[robot[robotcnt].nearestgoods_index].x;
-                        logFile << ", " << goods[robot[robotcnt].nearestgoods_index].y << ") ";
-                        logFile << "remaintime: " << goods[robot[robotcnt].nearestgoods_index].remaintime << endl;
-                        logFile << "get " << robotcnt << endl;
-#endif
-                    }
-                    // 机器人空闲，分配新任务
-                    else{
-                        if(robot[robotcnt].goods == 1)
-                        {
-                            // 带了货物，去泊位
-                            robot[robotcnt].nearestberth_index = nearest_berth(robot[robotcnt].x, robot[robotcnt].y);
-                            paths[robotcnt] = aStarSearch(ch, robot[robotcnt].x, robot[robotcnt].y,
-                                berth[robot[robotcnt].nearestberth_index].x, berth[robot[robotcnt].nearestberth_index].y);
-                            // 路径去掉起点
-                            paths[robotcnt].erase(paths[robotcnt].begin());
                         }
-                        else if(robot[robotcnt].goods == 0)
-                        {
-                            // 没带货物，去找货物
-                            robot[robotcnt].nearestgoods_index = selectnearestGoods(robotcnt, 1);
+                            // 机器人到取货点了
+                        else if (robot[robotcnt].x == goods[robot[robotcnt].nearestgoods_index].x &&
+                                 robot[robotcnt].y == goods[robot[robotcnt].nearestgoods_index].y &&
+                                 robot[robotcnt].goods == 0 &&
+                                 goods[robot[robotcnt].nearestgoods_index].remaintime > 0 &&
+                                 goods[robot[robotcnt].nearestgoods_index].status == 0) {
+                            printf("get %d\n", robotcnt);
+                            actioned_bot++;
+                            robot[robotcnt].actioned = true;
 #ifdef LOG
-                            logFile << "nearestgoods_index: " << robot[robotcnt].nearestgoods_index << endl;
-                            if(paths[robotcnt].size() != 0)
-                            {
-                                logFile << "goods(x, y): " << "(" << goods[robot[robotcnt].nearestgoods_index].x << ", " << goods[robot[robotcnt].nearestgoods_index].y << ")" << endl;
+                            logFile << "Robot " << robotcnt << " reached the goods! " << endl;
+                            logFile << "robot[" << robotcnt << "]: (" << robot[robotcnt].x << ", " << robot[robotcnt].y
+                                    << ")" << endl;
+                            logFile << "goods: (" << goods[robot[robotcnt].nearestgoods_index].x;
+                            logFile << ", " << goods[robot[robotcnt].nearestgoods_index].y << ") ";
+                            logFile << "remaintime: " << goods[robot[robotcnt].nearestgoods_index].remaintime << endl;
+                            logFile << "get " << robotcnt << endl;
+#endif
+                        }
+                            // 机器人空闲，分配新任务
+                        else {
+                            if (robot[robotcnt].goods == 1) {
+                                // 带了货物，去泊位
+                                robot[robotcnt].nearestberth_index = nearest_berth(robot[robotcnt].x,
+                                                                                   robot[robotcnt].y);
+                                paths[robotcnt] = aStarSearch(ch, robot[robotcnt].x, robot[robotcnt].y,
+                                                              berth[robot[robotcnt].nearestberth_index].x,
+                                                              berth[robot[robotcnt].nearestberth_index].y);
+                                // 路径去掉起点
+                                paths[robotcnt].erase(paths[robotcnt].begin());
+                            } else if (robot[robotcnt].goods == 0) {
+                                // 没带货物，去找货物
+                                robot[robotcnt].nearestgoods_index = selectnearestGoods(robotcnt, 1);
+#ifdef LOG
+                                logFile << "nearestgoods_index: " << robot[robotcnt].nearestgoods_index << endl;
+                                if (paths[robotcnt].size() != 0) {
+                                    logFile << "goods(x, y): " << "(" << goods[robot[robotcnt].nearestgoods_index].x
+                                            << ", " << goods[robot[robotcnt].nearestgoods_index].y << ")" << endl;
+                                }
+#endif
                             }
-#endif
                         }
                     }
-                }
-                // 路径列表非空
-                if(!paths[robotcnt].empty())
-                {
-                    // 取出下一个坐标点
-                    pair<int, int> next_step = paths[robotcnt].front();
+                    // 路径列表非空
+                    if (!paths[robotcnt].empty()) {
+                        // 取出下一个坐标点
+                        pair<int, int> next_step = paths[robotcnt].front();
 #ifdef LOG
-                    logFile << "Robot " << robotcnt << " Next step: (" << next_step.first << ", " << next_step.second << ")" << endl;
+                        logFile << "Robot " << robotcnt << " Next step: (" << next_step.first << ", "
+                                << next_step.second << ")" << endl;
 #endif
-                    int move_result;
-                    move_result = robotmove(robotmap, robotmap_next, robotcnt, robot[robotcnt].x, robot[robotcnt].y, next_step.first, next_step.second);
-                    // 下一步移动失败
-                    if(move_result < 0)
-                    // 移动失败，要重新算
-                    {
-#ifdef LOG
-                        logFile << "Robot move failed." << endl;
-#endif
-                        if(robot[robotcnt].goods == 1)
+                        int move_result;
+                        move_result = robotmove(ch, robotcnt, robot[robotcnt].x, robot[robotcnt].y, next_step.first,
+                                                next_step.second);
+                        // 下一步移动失败
+                        if (move_result == 0)
+                            // 移动失败，要重新算
                         {
-                            // 带了货物，去泊位
-                            robot[robotcnt].nearestberth_index = nearest_berth(robot[robotcnt].x, robot[robotcnt].y);
-                            paths[robotcnt] = aStarSearch(ch, robot[robotcnt].x, robot[robotcnt].y,
-                                berth[robot[robotcnt].nearestberth_index].x, berth[robot[robotcnt].nearestberth_index].y);
-                            // 路径去掉起点
+#ifdef LOG
+                            logFile << "Robot move failed." << endl;
+#endif
+                            paths[robotcnt].clear();
+                        }
+                        if (move_result == 1) {
+                            // 移动成功，并且没到目的地，机器人操作结束
                             paths[robotcnt].erase(paths[robotcnt].begin());
+                            if (!paths[robotcnt].empty()) {
+                                robot[robotcnt].actioned = true;
+                            }
+                            robot[robotcnt].x = next_step.first;
+                            robot[robotcnt].y = next_step.second;
+                            actioned_bot++;
+#ifdef LOG
+                            logFile << "Robot " << robotcnt << " moved successful!" << endl;
+#endif
                         }
-                        else if(robot[robotcnt].goods == 0)
-                        {
-                            // 没带货物，去找货物
-                            robot[robotcnt].nearestgoods_index = selectnearestGoods(robotcnt, 1);
-                        }
-                        // 本次移动的彻底失败，凉拌
-                        if(paths[robotcnt].size() <= 0)
-                        {
-                            robotmap_next[robot[robotcnt].x][robot[robotcnt].y] = robotcnt;
-                        }
-                        else{
-                            move_result = robotmove(robotmap, robotmap_next, robotcnt, robot[robotcnt].x,
-                                                     robot[robotcnt].y, next_step.first, next_step.second);
-                        }
-                    }
-                    if(move_result == 1)
-                    {
-                        // 移动成功，从路径中去除一个点
-                        paths[robotcnt].erase(paths[robotcnt].begin());
                     }
                 }
             }
+            if(actioned_bot == 0)
+                break;
         }
 //-----------------------------------BOAT------------------------------------//
         // 检查船只

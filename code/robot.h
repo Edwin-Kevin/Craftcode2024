@@ -25,6 +25,7 @@ struct Robot
     int status;
     int mbx, mby;
     bool enable = false;
+    bool actioned = false;
     Robot() {}
     Robot(int startX, int startY) {
         x = startX;
@@ -46,7 +47,7 @@ std::vector<int> GetRobotPlace(char* str);
              mhx, mhy: 机器人想去位置
     @ret: 0: 停一帧; 1: 移动成功; -1: 移动失败，main()中要重新算路线.
 */
-int robotmove(int (&robotmap)[n][n], int (&robotmap_next)[n][n], int robotid, int x, int y, int mhx, int mhy);
+int robotmove(char (&ch)[n][n], int robotid, int x, int y, int mhx, int mhy);
 
 /*
     @brief: 根据给出的坐标移动机器人(没有校验)
