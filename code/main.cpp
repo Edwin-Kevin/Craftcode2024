@@ -315,6 +315,10 @@ int main()
     for(int frame = 1; frame <= 15000; ++ frame)
     {
         int id = Input();
+        // 跳帧的时间差
+        int time_inaccuracy = id - frame;
+        // 修正时间
+        frame = id;
 #ifdef LOG
         logFile << "Frame " << frame << std::endl;
 #endif
@@ -344,12 +348,14 @@ int main()
         }
 
 //-----------------------------------ROBOT------------------------------------------------//
-        // 测试阶段只开一个机器人
         // 本轮执行动作的机器人数量，如果为0就可以退出循环了
         while(true) {
             int actioned_bot = 0;
-            for (int robotcnt = 0; robotcnt < 2; robotcnt++) {
+            for (int robotcnt = 0; robotcnt < 5; robotcnt++) {
                 if (robot[robotcnt].enable && !robot[robotcnt].actioned) {
+#ifdef LOG
+                    logFile << "Now check robot " << robotcnt << endl;
+#endif
                     // 机器人闲着
                     if (paths[robotcnt].empty()) {
                         // 机器人运货到泊位了
@@ -361,7 +367,7 @@ int main()
                             robot[robotcnt].actioned = true;
                             goods[robot[robotcnt].nearestgoods_index].status = 2;
                             goods[robot[robotcnt].nearestgoods_index].robotindex = -1;
-                            robot[robotcnt].nearestgoods_index = -1;
+                            robot[robotcnt].nearestberth_index = -1;
                             robot[robotcnt].goods = 0;
 #ifdef LOG
                             logFile << "Robot " << robotcnt << " reached the berth! " << endl;
@@ -375,6 +381,8 @@ int main()
                                  goods[robot[robotcnt].nearestgoods_index].remaintime > 0 &&
                                  goods[robot[robotcnt].nearestgoods_index].status == 0) {
                             printf("get %d\n", robotcnt);
+                            robot[robotcnt].nearestgoods_index = -1;
+                            robot[robotcnt].goods = 1;
                             actioned_bot++;
                             robot[robotcnt].actioned = true;
 #ifdef LOG
@@ -389,17 +397,21 @@ int main()
                         }
                             // 机器人空闲，分配新任务
                         else {
-                            if (robot[robotcnt].goods == 1) {
-                                // 带了货物，去泊位
+                            if (robot[robotcnt].goods == 1 && robot[robotcnt].nearestberth_index == -1) {
+                                // 刚带了货物，去泊位
                                 robot[robotcnt].nearestberth_index = nearest_berth(robot[robotcnt].x,
                                                                                    robot[robotcnt].y);
                                 paths[robotcnt] = aStarSearch(ch, robot[robotcnt].x, robot[robotcnt].y,
                                                               berth[robot[robotcnt].nearestberth_index].x,
                                                               berth[robot[robotcnt].nearestberth_index].y);
                                 // 路径去掉起点
-                                paths[robotcnt].erase(paths[robotcnt].begin());
-                            } else if (robot[robotcnt].goods == 0) {
-                                // 没带货物，去找货物
+                                if(!paths[robotcnt].empty())
+                                    paths[robotcnt].erase(paths[robotcnt].begin());
+#ifdef LOG
+                                logFile << "nearest berth: " << robot[robotcnt].nearestberth_index << endl;
+#endif
+                            } else if (robot[robotcnt].goods == 0 && robot[robotcnt].nearestgoods_index == -1) {
+                                // 从泊位出发，去找货物
                                 robot[robotcnt].nearestgoods_index = selectnearestGoods(robotcnt, 1);
 #ifdef LOG
                                 logFile << "nearestgoods_index: " << robot[robotcnt].nearestgoods_index << endl;
@@ -408,6 +420,24 @@ int main()
                                             << ", " << goods[robot[robotcnt].nearestgoods_index].y << ")" << endl;
                                 }
 #endif
+                            }
+                            else if(robot[robotcnt].goods == 0 && robot[robotcnt].nearestgoods_index >= 0)
+                            {
+                                /* 执行A* */
+                                paths[robotcnt] = aStarSearch(ch, robot[robotcnt].x, robot[robotcnt].y,
+                                                              goods[robot[robotcnt].nearestgoods_index].x,
+                                                              goods[robot[robotcnt].nearestgoods_index].y);
+                                if(!paths[robotcnt].empty())
+                                    paths[robotcnt].erase(paths[robotcnt].begin());
+                            }
+                            else if(robot[robotcnt].goods == 1 && robot[robotcnt].nearestberth_index >= 0)
+                            {
+                                /* 执行A* */
+                                paths[robotcnt] = aStarSearch(ch, robot[robotcnt].x, robot[robotcnt].y,
+                                                              berth[robot[robotcnt].nearestberth_index].x,
+                                                              berth[robot[robotcnt].nearestberth_index].y);
+                                if(!paths[robotcnt].empty())
+                                    paths[robotcnt].erase(paths[robotcnt].begin());
                             }
                         }
                     }
@@ -427,12 +457,14 @@ int main()
                             // 移动失败，要重新算
                         {
 #ifdef LOG
-                            logFile << "Robot move failed." << endl;
+                            logFile << "Robot " << robotcnt << " moved failed." << endl;
 #endif
+                            // 重新计算路线
                             paths[robotcnt].clear();
                         }
-                        if (move_result == 1) {
+                        else if (move_result == 1) {
                             // 移动成功，并且没到目的地，机器人操作结束
+                            // 如果到目的地，执行取、放货操作
                             paths[robotcnt].erase(paths[robotcnt].begin());
                             if (!paths[robotcnt].empty()) {
                                 robot[robotcnt].actioned = true;
@@ -471,41 +503,39 @@ int main()
 
 //----------------------------------GOODS-----------------------------------//
         // 更新每一个货物的存活时间
-        for(int i = 0; i < 210; i++)
-        {
-            if(goods[i].remaintime > 0 && goods[i].status == 0)
-            {
-                goods[i].remaintime --;
-                if(goods[i].remaintime <= 0)
-                {
-                    goods[i].status = 2;
-                    gds[goods[i].x][goods[i].y] = -1;
+        for(int t = 0; t <= time_inaccuracy; ++t) {
+            for (int i = 0; i < 210; i++) {
+                if (goods[i].remaintime > 0 && goods[i].status == 0) {
+                    goods[i].remaintime--;
+                    if (goods[i].remaintime <= 0) {
+                        goods[i].status = 2;
+                        gds[goods[i].x][goods[i].y] = -1;
+                    }
                 }
             }
         }
 
 //----------------------------------BERTH----------------------------------//
         // 检查港口
-        for(int i = 0; i < berth_num; ++i)
-        {
-            // 港口将货物装载到船上
-            if(berth[i].goods > 0 && berth[i].boat_index != -1 && boat[berth[i].boat_index].status == BOAT_STATUS_NORMAL)
-            {
-                // 如果船没装满
-                if(boat[berth[i].boat_index].goods < boat_capacity)
-                {
-                    // 如果港口堆积的货物比 loading_speed 要多，并且船剩下的容量也大于 loading_speed
-                    if((berth[i].goods > berth[i].loading_speed) &&
-                     ((boat_capacity - boat[berth[i].boat_index].goods) > berth[i].loading_speed))
-                    {
-                        // 那么就装 loading_speed 个货
-                        boat[berth[i].boat_index].goods += berth[i].loading_speed;
-                        berth[i].goods -= berth[i].loading_speed;
-                    }
-                    else{
-                        // 否则把港口的货全装上，或者把船装满，两者满足其一
-                        boat[berth[i].boat_index].goods += min(berth[i].goods, boat_capacity - boat[berth[i].boat_index].goods);
-                        berth[i].goods -= min(berth[i].goods, boat_capacity - boat[berth[i].boat_index].goods);
+        for(int t = 0; t <= time_inaccuracy; ++t) {
+            for (int i = 0; i < berth_num; ++i) {
+                // 港口将货物装载到船上
+                if (berth[i].goods > 0 && berth[i].boat_index != -1 &&
+                    boat[berth[i].boat_index].status == BOAT_STATUS_NORMAL) {
+                    // 如果船没装满
+                    if (boat[berth[i].boat_index].goods < boat_capacity) {
+                        // 如果港口堆积的货物比 loading_speed 要多，并且船剩下的容量也大于 loading_speed
+                        if ((berth[i].goods > berth[i].loading_speed) &&
+                            ((boat_capacity - boat[berth[i].boat_index].goods) > berth[i].loading_speed)) {
+                            // 那么就装 loading_speed 个货
+                            boat[berth[i].boat_index].goods += berth[i].loading_speed;
+                            berth[i].goods -= berth[i].loading_speed;
+                        } else {
+                            // 否则把港口的货全装上，或者把船装满，两者满足其一
+                            boat[berth[i].boat_index].goods += min(berth[i].goods,
+                                                                   boat_capacity - boat[berth[i].boat_index].goods);
+                            berth[i].goods -= min(berth[i].goods, boat_capacity - boat[berth[i].boat_index].goods);
+                        }
                     }
                 }
             }
