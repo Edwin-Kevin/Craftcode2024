@@ -183,50 +183,43 @@ void Init()
 #endif
     
     // 读入泊位信息
-    for(int i = 0; i < berth_num; i ++)
-    {
+    for(int i = 0; i < berth_num; i ++) {
         int id;
         scanf("%d", &id);
         scanf("%d%d%d%d", &berth[id].x, &berth[id].y, &berth[id].transport_time, &berth[id].loading_speed);
-        // berth[i].boat_index = -1;
-        // 计算该泊位的权重
-        berth[i].weight = -200 * berth[i].loading_speed + 1 * berth[i].transport_time;
-        // 将权重存入集合
-        weightToIndex.insert(make_pair(berth[i].weight, i)); // 创建了一个包含权重和索引的键值对
-
-#ifdef LOG
-        logFile << "Berth[" << i << "]:" ;
-        logFile << "Berth weight: " << berth[i].weight << endl;
-#endif
-
-        minWeights.insert(berth[i].weight); // 权重值存入 minWeights
-        // 遍历 weightToIndex 集合，尝试更新 minWeights 集合
-        for (const auto &pair : weightToIndex) {
-            // 将当前 weight 添加到集合中
-            // minWeights.insert(pair.first);
-
-            // 如果集合中的元素多于五个，移除最大的元素
-            if (minWeights.size() > 5) {
-                minWeights.erase(--minWeights.end());
-            }
-        }
         //-------------------------NEW-CODE--------------------------------//
         // 小块区域的中心点
-        int x = 60, y = 33;
-    }
-
+        int areapoint[5][2] = {
+                {60,  50},
+                {60,  100},
+                {60,  150},
+                {130, 67},
+                {130, 134}
+        };
+        for (int area = 0; area < 5; area++) {
+            int x = areapoint[area][0], y = areapoint[area][1];
+            while (!availmap[x][y]) {
+                x++;
+                y++;
+            }
+            vector<vector<pair<int, int>>> berth_distance(berth_num);
+            int min = 400;
+            int selected_berth = -1;
+            for (int i = 0; i < berth_num; ++i) {
+                if (!berth[i].selected) {
+                    berth_distance[i] = aStarSearch(ch, x, y, berth[i].x, berth[i].y);
+                    if (berth_distance[i].size() > 0 && berth_distance[i].size() < min) {
+                        min = berth_distance[i].size();
+                        selected_berth = i;
+                    }
+                }
+            }
+            berth[selected_berth].boat_index = area;
 #ifdef LOG
-    logFile << "minWeights: " ;
-    for (const auto& elem : minWeights) 
-    {
-        logFile << elem << " "; // 将集合中的每个元素写入文件
-    }
-    logFile << endl << "weightToIndex: " << endl;
-    for (const auto& pair : weightToIndex) 
-    {
-        logFile << "Key: " << pair.first << ", Value: " << pair.second << std::endl;
-    }
+            logFile << "Area " << area << " Selected berth: " << selected_berth << ", distance: " << min << endl;
 #endif
+        }
+    }
 
     // 初始化货物地图
     for(int i = 0; i < n; ++i)
@@ -332,30 +325,15 @@ int main()
         logFile << "Frame " << frame << std::endl;
 #endif
 //---------------------------------------BERTH---------------------------------------//
-        // 输出最小的五个 weight 以及它们对应的 berth 索引，从而选择五个最好的港口
-        int cnt = 0; // 轮船编号
-        for (int weight : minWeights) {
+        for(int berthcnt = 0; berthcnt < berth_num; berthcnt++){
+            if(berth[berthcnt].boat_index >= 0 && boat[berth[berthcnt].boat_index].status == BOAT_STATUS_NORMAL &&
+                    boat[berth[berthcnt].boat_index].pos == -1){
+                printf("ship %d %d\n", berth[berthcnt].boat_index, berthcnt);
 #ifdef LOG
-            logFile << "boatcnt: " << cnt << " weight: " << weight << endl;
+                logFile << "ship " << berth[berthcnt].boat_index << " " << berthcnt << std::endl;
 #endif
-            auto range = weightToIndex.equal_range(weight); // 在 weightToIndex 中查找 weight 值
-            // range.first 和 range.second 分别是迭代器，指向匹配的第一个元素和超出匹配元素序列的元素
-            for (auto it = range.first; it != range.second; ++it) {
-                int berthIndex = it -> second;
-                // 船只在虚拟点且可移动
-                if(boat[cnt].status == BOAT_STATUS_NORMAL && boat[cnt].pos == -1)
-                {
-                    berth[berthIndex].boat_index = cnt;
-                    printf("ship %d %d\n", cnt, berthIndex);
-#ifdef LOG
-                    logFile << "ship " << cnt << " " << berthIndex << std::endl;
-#endif
-                }
-                ++cnt;
             }
-            
         }
-
 //-----------------------------------ROBOT------------------------------------------------//
         // 本轮执行动作的机器人数量，如果为0就可以退出循环了
         while(true) {
@@ -385,7 +363,7 @@ int main()
                                 robot[robotcnt].y == berth[robot[robotcnt].nearestberth_index].y &&
                                 robot[robotcnt].goods == 1) {
 #ifdef LOG
-                                logFile << "370 hit." << endl;;
+                                logFile << "370 hit." << endl;
 #endif
                                 printf("pull %d\n", robotcnt);
                                 actioned_bot++;
@@ -459,9 +437,11 @@ int main()
 #endif
                             }
                             // 要去拿货物但是还没到
-                            else if(robot[robotcnt].goods == 0){
+                            else if(robot[robotcnt].goods == 0 && goods[robot[robotcnt].nearestgoods_index].remaintime > 0 &&
+                                    goods[robot[robotcnt].nearestgoods_index].status == 0){
 #ifdef LOG
                                 logFile << "455 hit." << endl;
+                                logFile << "nearestgoods_index: " << robot[robotcnt].nearestgoods_index << endl;
 #endif
                                 /* 执行A* */
                                 paths[robotcnt] = aStarSearch(ch, robot[robotcnt].x, robot[robotcnt].y,
@@ -471,7 +451,7 @@ int main()
                                     paths[robotcnt].erase(paths[robotcnt].begin());
                             }
                             else{
-                                robot[robotcnt].goods == -1;
+                                robot[robotcnt].nearestgoods_index = -1;
                             }
                         }
                         // 机器人空闲，分配新货物
@@ -537,7 +517,7 @@ int main()
             // 如果船装满了货，就开走
             if(boat[i].goods >= boat_capacity && boat[i].status == BOAT_STATUS_NORMAL)
             {
-                berth[boat[i].pos].boat_index = -1;
+//                berth[boat[i].pos].boat_index = -1;
                 printf("go %d\n", i);
             }
         }
@@ -545,6 +525,7 @@ int main()
         {
             for(int i = 0; i < boat_num; i++)
             {
+//                berth[boat[i].pos].boat_index = -1;
                 printf("go %d\n", i);
             }
         }
@@ -558,6 +539,11 @@ int main()
                     if (goods[i].remaintime <= 0) {
                         goods[i].status = 2;
                         gds[goods[i].x][goods[i].y] = -1;
+                        // 这里把对应机器人的货物索引清空
+                        if(goods[i].robotindex >= 0){
+                            robot[goods[i].robotindex].nearestgoods_index = -1;
+                        }
+                        goods[i].robotindex = -1;
                     }
                 }
             }
