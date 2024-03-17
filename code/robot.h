@@ -32,6 +32,7 @@ struct Robot
         y = startY;
     }
     int nearestberth_index = -1;
+    int secondnearestberth = -1;
     int nearestgoods_index = -1;
 };
 

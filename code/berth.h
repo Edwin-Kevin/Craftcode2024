@@ -21,6 +21,7 @@ struct Berth
     int weight;
     int boat_index = -1;
     int goods = 0;
+    bool selected = false;
     Berth(){}
     Berth(int x, int y, int transport_time, int loading_speed) {
         this -> x = x;
@@ -36,6 +37,6 @@ struct Berth
     @ret: 最近泊位的编号
 */
 int nearest_berth(int x, int y);
-
+int second_nearest_berth(int x, int y);
 #endif
 
