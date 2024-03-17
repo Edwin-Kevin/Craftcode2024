@@ -206,7 +206,7 @@ void Init()
         int min = 400;
         int selected_berth = -1;
         for (int i = 0; i < berth_num; ++i) {
-            if (!berth[i].selected) {
+            if (berth[i].boat_index < 0) {
                 berth_distance[i] = aStarSearch(ch, x, y, berth[i].x, berth[i].y);
                 if (berth_distance[i].size() > 0 && berth_distance[i].size() < min) {
                     min = berth_distance[i].size();
