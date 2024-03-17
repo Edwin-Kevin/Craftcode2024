@@ -5,7 +5,7 @@
 TODO: 
 1. 引入根据五大块的平均距离选择港口，并且平均距离的权重远高于港口运载速度
 2.碰撞不可避免，引入碰撞机制，机器人恢复状态清空对应paths，恢复后重算paths
-3.把去港口路线上经过的点都标记为距离这个港口最近 
+3.把去港口路线上经过的点都标记为距离这个港口最近
 4.最近货物的选择：随机选两个直线距离最近的，然后计算实际距离
 5.限制每一帧最多进行 10 次 A*
 bug: 第一帧只有五个货物，修改货物选择函数使得其不能无限递归；
@@ -126,6 +126,10 @@ int selectnearestGoods(int robot_index, int range)
                 }
             }
         }
+    }
+    if(x_left == 0 && y_up == 0 && x_right == n - 1 && y_down == n - 1) {
+        paths[robot_index].clear();
+        return -1;
     }
     // 扩大范围继续找
     return selectnearestGoods(robot_index, range + 1);
@@ -352,7 +356,7 @@ int main()
         // 本轮执行动作的机器人数量，如果为0就可以退出循环了
         while(true) {
             int actioned_bot = 0;
-            for (int robotcnt = 0; robotcnt < 5; robotcnt++) {
+            for (int robotcnt = 0; robotcnt < 10; robotcnt++) {
                 if (robot[robotcnt].enable && !robot[robotcnt].actioned && robot[robotcnt].status == 1) {
 #ifdef LOG
                     logFile << "Now check robot " << robotcnt << endl;
