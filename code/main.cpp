@@ -3,13 +3,10 @@
 
 /* 
 TODO: 
-1. 引入根据五大块的平均距离选择港口，并且平均距离的权重远高于港口运载速度
 2.碰撞不可避免，引入碰撞机制，机器人恢复状态清空对应paths，恢复后重算paths
 3.把去港口路线上经过的点都标记为距离这个港口最近
 4.最近货物的选择：随机选两个直线距离最近的，然后计算实际距离
 5.限制每一帧最多进行 10 次 A*
-bug: 第一帧只有五个货物，修改货物选择函数使得其不能无限递归；
-修改没有获取到货物的机器人的行为(nearestgoods_index为-1，置空paths)
 */
 
 char ch[n][n]; // 存储地图
@@ -363,8 +360,11 @@ int main()
                                 printf("pull %d\n", robotcnt);
                                 actioned_bot++;
                                 robot[robotcnt].actioned = true;
+                                // 将货物标记为已经运输完成
                                 goods[robot[robotcnt].nearestgoods_index].status = 2;
                                 goods[robot[robotcnt].nearestgoods_index].robotindex = -1;
+                                // 港口增加一货物
+                                berth[robot[robotcnt].nearestberth_index].goods++;
                                 // 卸货的同时清空最近货物和最近泊位的标记
                                 robot[robotcnt].nearestgoods_index = -1;
                                 robot[robotcnt].nearestberth_index = -1;
@@ -472,7 +472,7 @@ int main()
                                                 next_step.second);
                         // 下一步移动失败
                         if (move_result == 0)
-                            // 移动失败，要重新算
+                            // 移动失败，发生碰撞
                         {
 #ifdef LOG
                             logFile << "Robot " << robotcnt << " moved failed." << endl;
@@ -553,6 +553,9 @@ int main()
                             ((boat_capacity - boat[berth[i].boat_index].goods) > berth[i].loading_speed)) {
                             // 那么就装 loading_speed 个货
                             boat[berth[i].boat_index].goods += berth[i].loading_speed;
+#ifdef LOG
+                            logFile << "boat[" << berth[i].boat_index << "].goods: " << boat[berth[i].boat_index].goods << endl;
+#endif
                             berth[i].goods -= berth[i].loading_speed;
                         } else {
                             // 否则把港口的货全装上，或者把船装满，两者满足其一

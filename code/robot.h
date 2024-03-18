@@ -44,7 +44,7 @@ struct Robot
 std::vector<int> GetRobotPlace(char* str);
 /*
     @brief: 检查后移动机器人
-    @params: robotmap, robotmap_next: 同 main.cpp; robotid: 机器人编号; x, y: 机器人当前位置;
+    @params: ch: 同 main.cpp; robotid: 机器人编号; x, y: 机器人当前位置;
              mhx, mhy: 机器人想去位置
     @ret: 0: 停一帧; 1: 移动成功; -1: 移动失败，main()中要重新算路线.
 */
