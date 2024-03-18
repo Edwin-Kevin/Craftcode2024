@@ -484,6 +484,9 @@ int main()
 #endif
                             // 重新计算路线
                             paths[robotcnt].clear();
+                            // 对本个机器人再次执行移动计算。
+                            robotcnt--;
+                            continue;
                         }
                         else if (move_result == 1) {
                             // 移动成功，并且没到目的地，机器人操作结束
