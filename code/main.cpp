@@ -322,6 +322,11 @@ int main()
 #endif
 //---------------------------------------BERTH---------------------------------------//
         for(int berthcnt = 0; berthcnt < berth_num; berthcnt++){
+#ifdef LOG
+            logFile << "berth[" << berthcnt << "]: boat_index: " << berth[berthcnt].boat_index << endl
+            << "boat status: " << boat[berth[berthcnt].boat_index].status << endl
+            << "boat pos: " << boat[berth[berthcnt].boat_index].pos << endl;
+#endif
             if(berth[berthcnt].boat_index >= 0 && boat[berth[berthcnt].boat_index].status == BOAT_STATUS_NORMAL &&
                     boat[berth[berthcnt].boat_index].pos == -1){
                 printf("ship %d %d\n", berth[berthcnt].boat_index, berthcnt);
@@ -505,10 +510,12 @@ int main()
         for(int i = 0; i < boat_num; ++ i)
         {
             // 如果船装满了货，就开走
-            if(boat[i].goods >= boat_capacity && boat[i].status == BOAT_STATUS_NORMAL)
+            if(boat[i].goods >= boat_capacity && boat[i].status == BOAT_STATUS_NORMAL && boat[i].pos >= 0)
             {
 //                berth[boat[i].pos].boat_index = -1;
                 printf("go %d\n", i);
+                // 清空船上的货物计数器
+                boat[i].goods = 0;
             }
         }
         if(frame == 13000)
@@ -546,22 +553,25 @@ int main()
                 // 港口将货物装载到船上
                 if (berth[i].goods > 0 && berth[i].boat_index != -1 &&
                     boat[berth[i].boat_index].status == BOAT_STATUS_NORMAL) {
-                    // 如果船没装满
-                    if (boat[berth[i].boat_index].goods < boat_capacity) {
-                        // 如果港口堆积的货物比 loading_speed 要多，并且船剩下的容量也大于 loading_speed
-                        if ((berth[i].goods > berth[i].loading_speed) &&
-                            ((boat_capacity - boat[berth[i].boat_index].goods) > berth[i].loading_speed)) {
-                            // 那么就装 loading_speed 个货
-                            boat[berth[i].boat_index].goods += berth[i].loading_speed;
+                    if(boat[berth[i].boat_index].pos == i) {
+                        // 如果船没装满
+                        if (boat[berth[i].boat_index].goods < boat_capacity) {
+                            // 如果港口堆积的货物比 loading_speed 要多，并且船剩下的容量也大于 loading_speed
+                            if ((berth[i].goods > berth[i].loading_speed) &&
+                                ((boat_capacity - boat[berth[i].boat_index].goods) > berth[i].loading_speed)) {
+                                // 那么就装 loading_speed 个货
+                                boat[berth[i].boat_index].goods += berth[i].loading_speed;
 #ifdef LOG
-                            logFile << "boat[" << berth[i].boat_index << "].goods: " << boat[berth[i].boat_index].goods << endl;
+                                logFile << "boat[" << berth[i].boat_index << "].goods: "
+                                        << boat[berth[i].boat_index].goods << endl;
 #endif
-                            berth[i].goods -= berth[i].loading_speed;
-                        } else {
-                            // 否则把港口的货全装上，或者把船装满，两者满足其一
-                            boat[berth[i].boat_index].goods += min(berth[i].goods,
-                                                                   boat_capacity - boat[berth[i].boat_index].goods);
-                            berth[i].goods -= min(berth[i].goods, boat_capacity - boat[berth[i].boat_index].goods);
+                                berth[i].goods -= berth[i].loading_speed;
+                            } else {
+                                // 否则把港口的货全装上，或者把船装满，两者满足其一
+                                boat[berth[i].boat_index].goods += min(berth[i].goods,
+                                                                       boat_capacity - boat[berth[i].boat_index].goods);
+                                berth[i].goods -= min(berth[i].goods, boat_capacity - boat[berth[i].boat_index].goods);
+                            }
                         }
                     }
                 }
