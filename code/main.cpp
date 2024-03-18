@@ -67,7 +67,7 @@ int selectnearestGoods(int robot_index, int range)
             }
         }
         j = y_down;
-        if(gds[i][j] >= 0 && availmap[i][j] && goods[gds[i][j]].robotindex < 0 && goods[gds[i][j]].val > 100)
+        if(gds[i][j] >= 0 && availmap[i][j] && goods[gds[i][j]].robotindex < 0 && goods[gds[i][j]].val > 150)
         {
             paths[robot_index] = aStarSearch(ch, robot[robot_index].x, robot[robot_index].y, i, j);
             if(paths[robot_index].empty())
@@ -520,13 +520,9 @@ int main()
                 // 清空船上的货物计数器
                 boat[i].goods = 0;
             }
-        }
-        if(frame == 13000)
-        {
-            for(int i = 0; i < boat_num; i++)
-            {
-//                berth[boat[i].pos].boat_index = -1;
-                printf("go %d\n", i);
+            if(boat[i].status == BOAT_STATUS_NORMAL && boat[i].pos >= 0){
+                if((berth[boat[i].pos].transport_time + frame + 1) >= 15000)
+                    printf("go %d\n", i);
             }
         }
 
