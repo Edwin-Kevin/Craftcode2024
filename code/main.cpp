@@ -6,13 +6,13 @@ TODO:
 2.碰撞不可避免，引入碰撞机制，机器人恢复状态清空对应paths，恢复后重算paths
 3.把去港口路线上经过的点都标记为距离这个港口最近
 4.最近货物的选择：随机选两个直线距离最近的，然后计算实际距离
-5.限制每一帧最多进行 10 次 A*
 */
 
 char ch[n][n]; // 存储地图
 bool availmap[n][n]; // 记录可达点的地图（包含陆地、机器人、港口位置）
 int robotmap[n][n];  // 存储当前机器人位置的地图, 内容为机器人的编号
 int robotmap_next[n][n]; // 存储下一帧机器人位置的地图, 内容为机器人的编号
+int narrowmap[n][n];     // 标记仅有一格宽的狭路区域
 int gds[n][n]; // 存储当前货物位置(内容为货物编号，-1 为无货)
 int boat_capacity; // 船只容量
 Berth berth[berth_num];
@@ -131,6 +131,35 @@ int selectnearestGoods(int robot_index, int range)
     // 扩大范围继续找
     return selectnearestGoods(robot_index, range + 1);
 }
+// 检查指定位置是否为边界或不可通行
+bool isBoundaryOrBlocked(int row, int col){
+    if(row < 0 || row >= n || col < 0 || col >n || !availmap[row][col]){
+        return true;
+    }
+    return false;
+}
+// 标记狭路区域
+void markNarrowArea(){
+    // 区域编号
+    int narrowAreaID = 1;
+    for(int i = 0; i < n; i++){
+        for(int j = 0; j < n; j++){
+            narrowmap[i][j] = 0;
+            if(availmap[i][j]){
+                int blockedDirection = 0;
+                blockedDirection += isBoundaryOrBlocked(i - 1, j) ? 1 : 0;
+                blockedDirection += isBoundaryOrBlocked(i + 1, j) ? 1 : 0;
+                blockedDirection += isBoundaryOrBlocked(i, j - 1) ? 1 : 0;
+                blockedDirection += isBoundaryOrBlocked(i, j + 1) ? 1 : 0;
+
+                if(blockedDirection >= 2){
+                    narrowmap[i][j] = narrowAreaID++;
+                }
+            }
+        }
+    }
+    return;
+}
 
 void Init()
 {
@@ -162,6 +191,19 @@ void Init()
     }
     // 标记可达点
     initMap(ch, availmap);
+
+    // 标记狭窄区域
+    markNarrowArea();
+
+#ifdef LOG
+    logFile << "Narrow Map:" << endl;
+    for(int i = 0; i < n; i++){
+        for(int j = 0; j < n; j++){
+            logFile << setw(4) << setfill(' ') << narrowmap[i][j];
+        }
+        logFile << endl;
+    }
+#endif
 
     // 检查机器人是否在墙里
     for(int i = 0; i < robot_num; ++i)
