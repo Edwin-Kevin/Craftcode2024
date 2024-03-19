@@ -11,7 +11,7 @@ TODO:
 char ch[n][n]; // 存储地图
 bool availmap[n][n]; // 记录可达点的地图（包含陆地、机器人、港口位置）
 int robotmap[n][n];  // 存储当前机器人位置的地图, 内容为机器人的编号
-int robotmap_next[n][n]; // 存储下一帧机器人位置的地图, 内容为机器人的编号
+int robotmap_next[n][n]; // 存储下一帧机器人位置的地图, 内容为下一帧机器人的个数
 bool narrowmap[n][n];     // 标记仅有一格宽的狭路区域
 int gds[n][n]; // 存储当前货物位置(内容为货物编号，-1 为无货)
 int boat_capacity; // 船只容量
@@ -332,7 +332,7 @@ int Input()
         for(int j = 0; j < n; ++j)
         {
             robotmap[i][j] = -1;
-            robotmap_next[i][j] = -1;
+            robotmap_next[i][j] = 0;
             if(ch[i][j] == 'A')
             {
                 ch[i][j] = '.';
@@ -400,9 +400,14 @@ int main()
         }
 //-----------------------------------ROBOT------------------------------------------------//
         // 本轮执行动作的机器人数量，如果为0就可以退出循环了
-        for(int robotcnt = 0; robotcnt < 10; robot++){
-            
+        for(int robotcnt = 0; robotcnt < 10; robotcnt++){
+            if(!paths[robotcnt].empty()){
+                pair<int, int> next_step = paths[robotcnt].front();
+
+                robotmap_next[next_step.first][next_step.second]++;
+            }
         }
+
         while(true) {
             int actioned_bot = 0;
             for (int robotcnt = 0; robotcnt < 10; robotcnt++) {
@@ -461,8 +466,10 @@ int main()
                                     robot[robotcnt].nearestberth_index = robot[robotcnt].secondnearestberth;
                                 }
                                 // 路径去掉起点
-                                if(!paths[robotcnt].empty())
+                                if(!paths[robotcnt].empty()) {
                                     paths[robotcnt].erase(paths[robotcnt].begin());
+                                    robotmap_next[paths[robotcnt].front().first][paths[robotcnt].front().second]++;
+                                }
 #ifdef LOG
                                 logFile << "nearest berth: " << robot[robotcnt].nearestberth_index << endl;
 #endif
@@ -511,8 +518,10 @@ int main()
                                 paths[robotcnt] = aStarSearch(ch, robot[robotcnt].x, robot[robotcnt].y,
                                                               goods[robot[robotcnt].nearestgoods_index].x,
                                                               goods[robot[robotcnt].nearestgoods_index].y);
-                                if(!paths[robotcnt].empty())
+                                if(!paths[robotcnt].empty()) {
                                     paths[robotcnt].erase(paths[robotcnt].begin());
+                                    robotmap_next[paths[robotcnt].front().first][paths[robotcnt].front().second]++;
+                                }
                             }
                             else{
                                 robot[robotcnt].nearestgoods_index = -1;
@@ -545,44 +554,52 @@ int main()
                         if (move_result == 0)
                             // 移动失败，发生碰撞
                         {
+                            robotmap_next[next_step.first][next_step.second]--;
 #ifdef LOG
                             logFile << "Robot " << robotcnt << " moved failed." << endl;
 #endif
-                            // 如果对方机器人在狭路区域，执行避让
-                            if(narrowmap[next_step.first][next_step.second])
-                            {
-                                int x = robot[robotcnt].x, y = robot[robotcnt].y;
-                                // 计算动量
-                                int mhx = next_step.first - x, mhy = next_step.second - y;
-                                pair<int, int> newPoint = {x, y};
-                                paths[robotcnt].insert(paths[robotcnt].begin(), newPoint);
-                                // 还要计算避让点的坐标
-                                // 优先计算横向避让
-                                if(ch[x + mhy][y + mhx] == '.' || ch[x + mhy][y + mhx] == 'B'){
-                                    newPoint = {x + mhy, y + mhx};
+                            if(robotmap_next[robot[robotcnt].x][robot[robotcnt].y] > 0) {
+                                // 如果对方机器人在狭路区域，执行避让
+                                if (narrowmap[next_step.first][next_step.second]) {
+                                    int x = robot[robotcnt].x, y = robot[robotcnt].y;
+                                    // 计算动量
+                                    int mhx = next_step.first - x, mhy = next_step.second - y;
+                                    pair<int, int> newPoint = {x, y};
                                     paths[robotcnt].insert(paths[robotcnt].begin(), newPoint);
+                                    // 还要计算避让点的坐标
+                                    // 优先计算横向避让
+                                    if (ch[x + mhy][y + mhx] == '.' || ch[x + mhy][y + mhx] == 'B') {
+                                        newPoint = {x + mhy, y + mhx};
+                                        paths[robotcnt].insert(paths[robotcnt].begin(), newPoint);
+                                    } else if (ch[x - mhy][y - mhx] == '.' || ch[x - mhy][y - mhx] == 'B') {
+                                        newPoint = {x - mhy, y - mhx};
+                                        paths[robotcnt].insert(paths[robotcnt].begin(), newPoint);
+                                    }
+                                        // 狭路相逢，纵向避让
+                                    else if (ch[x - mhx][y - mhy] == '.' || ch[x - mhx][y - mhy] == 'B') {
+                                        newPoint = {x - mhx, y - mhy};
+                                        paths[robotcnt].insert(paths[robotcnt].begin(), newPoint);
+                                    }
+                                        // 卡死了，动不了
+                                    else {
+                                        robot[robotcnt].actioned = true;
+                                    }
                                 }
-                                else if(ch[x - mhy][y - mhx] == '.' || ch[x - mhy][y - mhx] == 'B'){
-                                    newPoint = {x - mhy, y - mhx};
-                                    paths[robotcnt].insert(paths[robotcnt].begin(), newPoint);
+                                    // 重新计算路线
+                                else {
+                                    paths[robotcnt].clear();
                                 }
-                                // 狭路相逢，纵向避让
-                                else if(ch[x - mhx][y - mhy] == '.' || ch[x - mhx][y - mhy] == 'B'){
-                                    newPoint = {x - mhx, y - mhy};
-                                    paths[robotcnt].insert(paths[robotcnt].begin(), newPoint);
+                                if (!paths[robotcnt].empty()) {
+                                    robotmap_next[paths[robotcnt].front().first][paths[robotcnt].front().second]++;
                                 }
-                                // 卡死了，动不了
-                                else{
-                                    robot[robotcnt].actioned = true;
-                                }
+                                // 对本个机器人再次执行移动计算。
+                                robotcnt--;
+                                continue;
                             }
-                            // 重新计算路线
                             else{
-                                paths[robotcnt].clear();
+                                // 原地等待
+                                robot[robotcnt].actioned = true;
                             }
-                            // 对本个机器人再次执行移动计算。
-                            robotcnt--;
-                            continue;
                         }
                         else if (move_result == 1) {
                             // 移动成功，并且没到目的地，机器人操作结束
