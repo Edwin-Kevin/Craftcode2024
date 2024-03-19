@@ -559,8 +559,14 @@ int main()
                             logFile << "Robot " << robotcnt << " moved failed." << endl;
 #endif
                             if(robotmap_next[robot[robotcnt].x][robot[robotcnt].y] > 0) {
+#ifdef LOG
+                                logFile << "Avoidance strategy activated." << endl;
+#endif
                                 // 如果对方机器人在狭路区域，执行避让
                                 if (narrowmap[next_step.first][next_step.second]) {
+#ifdef LOG
+                                    logFile << "Avoidance action." << endl;
+#endif
                                     int x = robot[robotcnt].x, y = robot[robotcnt].y;
                                     // 计算动量
                                     int mhx = next_step.first - x, mhy = next_step.second - y;
@@ -584,6 +590,14 @@ int main()
                                     else {
                                         robot[robotcnt].actioned = true;
                                     }
+                                }
+                                // 对面不在狭窄区域，但这个机器人在
+                                else if(narrowmap[robot[robotcnt].x][robot[robotcnt].y]){
+#ifdef LOG
+                                    logFile << "Waiting for another robot to avoid crash..." << endl;
+#endif
+                                    robotmap_next[next_step.first][next_step.second]++;
+                                    continue;
                                 }
                                     // 重新计算路线
                                 else {
