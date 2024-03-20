@@ -2,6 +2,7 @@
 #ifndef BERTH_H
 #define BERTH_H
 #define berth_num 10
+#include "map.h"
 
 /* 
     @brief: 泊位
@@ -36,7 +37,7 @@ struct Berth
     @params: x,y: 机器人的横坐标和纵坐标
     @ret: 最近泊位的编号
 */
-int nearest_berth(int x, int y);
-int second_nearest_berth(int x, int y);
+int nearest_berth(int availmap[n][n], int x, int y);
+int second_nearest_berth(int availmap[n][n], int x, int y);
 #endif
 

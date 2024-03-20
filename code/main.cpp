@@ -9,7 +9,7 @@ TODO:
 */
 
 char ch[n][n]; // 存储地图
-bool availmap[n][n]; // 记录可达点的地图（包含陆地、机器人、港口位置）
+int availmap[n][n]; // 记录可达点的地图（包含陆地、机器人、港口位置）
 int robotmap[n][n];  // 存储当前机器人位置的地图, 内容为机器人的编号
 int robotmap_next[n][n]; // 存储下一帧机器人位置的地图, 内容为下一帧机器人的个数
 bool narrowmap[n][n];     // 标记仅有一格宽的狭路区域
@@ -18,10 +18,6 @@ int boat_capacity; // 船只容量
 Berth berth[berth_num];
 Robot robot[robot_num];
 Goods goods[210];
-// set 可以自动排序元素，使元素保持升序
-set<int> minWeights;
-// 使用 multimap 来存储权重值和对应的 berth 索引
-multimap<int, int> weightToIndex;
 
 std::vector<std::vector<std::pair<int, int>>> paths(10); // 10 个机器人的路径列表
 
@@ -50,7 +46,8 @@ int selectnearestGoods(int robot_index, int range)
     {
         int j = y_up;
         // 有货且可达
-        if(gds[i][j] >= 0 && availmap[i][j] && goods[gds[i][j]].robotindex < 0 && goods[gds[i][j]].val > 100)
+        if(gds[i][j] >= 0 && availmap[i][j] == availmap[robot[robot_index].x][robot[robot_index].y]
+        && goods[gds[i][j]].robotindex < 0 && goods[gds[i][j]].val > 100)
         {
             paths[robot_index] = aStarSearch(ch, robot[robot_index].x, robot[robot_index].y, i, j);
             if(paths[robot_index].empty())
@@ -67,7 +64,8 @@ int selectnearestGoods(int robot_index, int range)
             }
         }
         j = y_down;
-        if(gds[i][j] >= 0 && availmap[i][j] && goods[gds[i][j]].robotindex < 0 && goods[gds[i][j]].val > 150)
+        if(gds[i][j] >= 0 && availmap[i][j] == availmap[robot[robot_index].x][robot[robot_index].y]
+        && goods[gds[i][j]].robotindex < 0 && goods[gds[i][j]].val > 100)
         {
             paths[robot_index] = aStarSearch(ch, robot[robot_index].x, robot[robot_index].y, i, j);
             if(paths[robot_index].empty())
@@ -89,7 +87,8 @@ int selectnearestGoods(int robot_index, int range)
     {
         int i = x_left;
         // 有货且可达
-        if(gds[i][j] >= 0 && availmap[i][j] && goods[gds[i][j]].robotindex < 0 && goods[gds[i][j]].val > 100)
+        if(gds[i][j] >= 0 && availmap[i][j] == availmap[robot[robot_index].x][robot[robot_index].y]
+        && goods[gds[i][j]].robotindex < 0 && goods[gds[i][j]].val > 100)
         {
             paths[robot_index] = aStarSearch(ch, robot[robot_index].x, robot[robot_index].y, i, j);
             if(paths[robot_index].empty())
@@ -107,7 +106,8 @@ int selectnearestGoods(int robot_index, int range)
         }
         i = x_right;
         // 有货且可达
-        if(gds[i][j] >= 0 && availmap[i][j] && goods[gds[i][j]].robotindex < 0 && goods[gds[i][j]].val > 100)
+        if(gds[i][j] >= 0 && availmap[i][j] == availmap[robot[robot_index].x][robot[robot_index].y]
+        && goods[gds[i][j]].robotindex < 0 && goods[gds[i][j]].val > 100)
         {
             paths[robot_index] = aStarSearch(ch, robot[robot_index].x, robot[robot_index].y, i, j);
             if(paths[robot_index].empty())
@@ -133,7 +133,7 @@ int selectnearestGoods(int robot_index, int range)
 }
 // 检查指定位置是否为边界或不可通行
 bool isBoundaryOrBlocked(int row, int col){
-    if(row < 0 || row >= n || col < 0 || col >n || !availmap[row][col]){
+    if(row < 0 || row >= n || col < 0 || col >n || availmap[row][col] < 0){
         return true;
     }
     return false;
@@ -145,25 +145,22 @@ void markNarrowArea(){
     for(int i = 0; i < n; i++){
         for(int j = 0; j < n; j++){
             narrowmap[i][j] = false;
-            if(availmap[i][j]){
+            if(availmap[i][j] >= 0){
                 int blockedDirection = 0;
                 int availDirection = 0;
                 blockedDirection += isBoundaryOrBlocked(i - 1, j) ? 1 : 0;
                 blockedDirection += isBoundaryOrBlocked(i + 1, j) ? 1 : 0;
                 blockedDirection += isBoundaryOrBlocked(i, j - 1) ? 1 : 0;
                 blockedDirection += isBoundaryOrBlocked(i, j + 1) ? 1 : 0;
-//                blockedDirection += isBoundaryOrBlocked(i + 1, j + 1) ? 1 : 0;
-//                blockedDirection += isBoundaryOrBlocked(i + 1, j - 1) ? 1 : 0;
-//                blockedDirection += isBoundaryOrBlocked(i - 1, j - 1) ? 1 : 0;
-//                blockedDirection += isBoundaryOrBlocked(i - 1, j + 1) ? 1 : 0;
-                availDirection += availmap[i + 1][j + 1] ? 1 : 0;
-                availDirection += availmap[i + 1][j - 1] ? 1 : 0;
-                availDirection += availmap[i - 1][j + 1] ? 1 : 0;
-                availDirection += availmap[i - 1][j - 1] ? 1 : 0;
-                availDirection += availmap[i][j + 1] ? 1 : 0;
-                availDirection += availmap[i][j - 1] ? 1 : 0;
-                availDirection += availmap[i + 1][j] ? 1 : 0;
-                availDirection += availmap[i - 1][j] ? 1 : 0;
+
+                availDirection += isBoundaryOrBlocked(i + 1, j + 1) ? 0 : 1;
+                availDirection += isBoundaryOrBlocked(i + 1, j - 1) ? 0 : 1;
+                availDirection += isBoundaryOrBlocked(i - 1, j + 1) ? 0 : 1;
+                availDirection += isBoundaryOrBlocked(i - 1, j - 1) ? 0 : 1;
+                availDirection += isBoundaryOrBlocked(i, j + 1) ? 0 : 1;
+                availDirection += isBoundaryOrBlocked(i, j - 1) ? 0 : 1;
+                availDirection += isBoundaryOrBlocked(i + 1, j) ? 0 : 1;
+                availDirection += isBoundaryOrBlocked(i - 1, j) ? 0 : 1;
 
                 if(blockedDirection >= 2 && availDirection <= 4){
                     // 狭路区域遇到则避让，开阔区域交错则等待
@@ -212,10 +209,21 @@ void Init()
     // 标记可达点
     initMap(ch, availmap);
 
+
+#ifdef LOG
+    logFile << "availmap: " << endl;
+    for(int i = 0; i < n; i++){
+        for(int j = 0; j < n; j++){
+            logFile << setw(2) << setfill(' ') << availmap[i][j];
+        }
+        logFile << endl;
+    }
+#endif
     // 标记狭窄区域
     markNarrowArea();
 
 #ifdef LOG
+
     logFile << "Narrow Map:" << endl;
     for(int i = 0; i < n; i++){
         for(int j = 0; j < n; j++){
@@ -231,7 +239,7 @@ void Init()
     {
         int x = robot[i].x;
         int y = robot[i].y;
-        if(availmap[x][y])  robot[i].enable = true;
+        if(availmap[x][y] >= 0)  robot[i].enable = true;
     }
 
 #ifdef LOG
@@ -258,7 +266,7 @@ void Init()
     };
     for (int area = 0; area < 5; area++) {
         int x = areapoint[area][0], y = areapoint[area][1];
-        while (!availmap[x][y]) {
+        while (availmap[x][y] < 0) {
             x++;
             y++;
         }
@@ -266,7 +274,7 @@ void Init()
         int min = 400;
         int selected_berth = -1;
         for (int i = 0; i < berth_num; ++i) {
-            if (berth[i].boat_index < 0) {
+            if (berth[i].boat_index < 0 && availmap[berth[i].x][berth[i].y] == availmap[x][y]) {
                 berth_distance[i] = aStarSearch(ch, x, y, berth[i].x, berth[i].y);
                 if (berth_distance[i].size() > 0 && berth_distance[i].size() < min) {
                     min = berth_distance[i].size();
@@ -381,6 +389,7 @@ int main()
         // 修正时间
         frame = id;
 #ifdef LOG
+        logFile << "====================================================================" << endl;
         logFile << "Frame " << frame << std::endl;
 #endif
 //---------------------------------------BERTH---------------------------------------//
@@ -423,7 +432,6 @@ int main()
                         logFile << "robot (x, y): " << robot[robotcnt].x << ", " << robot[robotcnt].y << endl;
 #endif
                         // 机器人分配泊位了
-                        /* 这里有概率出现 berth[-1] 导致程序爆炸，修！*/
                         if(robot[robotcnt].nearestberth_index >= 0)
                         {
 #ifdef LOG
@@ -494,8 +502,8 @@ int main()
                                 actioned_bot++;
                                 robot[robotcnt].actioned = true;
                                 // 取两个最近的泊位
-                                robot[robotcnt].nearestberth_index = nearest_berth(robot[robotcnt].x, robot[robotcnt].y);
-                                robot[robotcnt].secondnearestberth = second_nearest_berth(robot[robotcnt].x, robot[robotcnt].y);
+                                robot[robotcnt].nearestberth_index = nearest_berth(availmap, robot[robotcnt].x, robot[robotcnt].y);
+                                robot[robotcnt].secondnearestberth = second_nearest_berth(availmap, robot[robotcnt].x, robot[robotcnt].y);
 #ifdef LOG
                                 logFile << "Robot " << robotcnt << " reached the goods! " << endl;
                                 logFile << "robot[" << robotcnt << "]: (" << robot[robotcnt].x << ", " << robot[robotcnt].y
@@ -536,7 +544,16 @@ int main()
                                 logFile << "goods(x, y): " << "(" << goods[robot[robotcnt].nearestgoods_index].x
                                         << ", " << goods[robot[robotcnt].nearestgoods_index].y << ")" << endl;
                             }
-#endif                        
+#endif
+                            // 没找到货物，一边去，别挡路
+                            if(robot[robotcnt].nearestgoods_index == -1){
+                                paths[robotcnt] = aStarSearch(ch, robot[robotcnt].x, robot[robotcnt].y, robot[robotcnt].x + 3,
+                                                              robot[robotcnt].y + 3);
+                                if(!paths[robotcnt].empty()) {
+                                    paths[robotcnt].erase(paths[robotcnt].begin());
+                                    robotmap_next[paths[robotcnt].front().first][paths[robotcnt].front().second]++;
+                                }
+                            }
                         }
                     }
                     // 路径列表非空

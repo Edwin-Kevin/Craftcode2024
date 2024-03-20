@@ -15,6 +15,6 @@ extern int gds[][n];
     @params: ch: 给入的地图; outputMap: 输出的可达性地图(不可达为 false)
     @ret: std::vector<int>
 */
-void initMap(char ch[n][n], bool outputMap[n][n]);
+void initMap(char ch[n][n], int outputMap[n][n]);
 
 #endif
