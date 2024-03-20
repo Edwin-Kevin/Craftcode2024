@@ -34,17 +34,17 @@ int selectnearestGoods(int robot_index, int range);
 int selectnearestGoods(int robot_index, int range)
 {
     // 边界左上角
-    int x_left = robot[robot_index].x - range, y_up = robot[robot_index].y - range;
-    if(x_left < 0)  x_left = 0;
-    if(y_up < 0)    y_up = 0;
+    int x_up = robot[robot_index].x - range, y_left = robot[robot_index].y - range;
+    if(x_up < 0)  x_up = 0;
+    if(y_left < 0)    y_left = 0;
     // 边界右下角
-    int x_right = robot[robot_index].x + range, y_down = robot[robot_index].y + range;
-    if(x_right >= n) x_right = n - 1;
-    if(y_down >= n)  y_down = n - 1;
+    int x_down = robot[robot_index].x + range, y_right = robot[robot_index].y + range;
+    if(x_down >= n) x_down = n - 1;
+    if(y_right >= n)  y_right = n - 1;
 
-    for(int i = x_left; i <= x_right; ++i)
+    for(int i = x_up; i <= x_down; ++i)
     {
-        int j = y_up;
+        int j = y_left;
         // 有货且可达
         if(gds[i][j] >= 0 && availmap[i][j] == availmap[robot[robot_index].x][robot[robot_index].y]
         && goods[gds[i][j]].robotindex < 0 && goods[gds[i][j]].val > 100)
@@ -63,7 +63,7 @@ int selectnearestGoods(int robot_index, int range)
                 }
             }
         }
-        j = y_down;
+        j = y_right;
         if(gds[i][j] >= 0 && availmap[i][j] == availmap[robot[robot_index].x][robot[robot_index].y]
         && goods[gds[i][j]].robotindex < 0 && goods[gds[i][j]].val > 100)
         {
@@ -83,9 +83,9 @@ int selectnearestGoods(int robot_index, int range)
         }
     }
 
-    for(int j = y_up; j <= y_down; j++)
+    for(int j = y_left; j <= y_right; j++)
     {
-        int i = x_left;
+        int i = x_up;
         // 有货且可达
         if(gds[i][j] >= 0 && availmap[i][j] == availmap[robot[robot_index].x][robot[robot_index].y]
         && goods[gds[i][j]].robotindex < 0 && goods[gds[i][j]].val > 100)
@@ -104,7 +104,7 @@ int selectnearestGoods(int robot_index, int range)
                 }
             }
         }
-        i = x_right;
+        i = x_down;
         // 有货且可达
         if(gds[i][j] >= 0 && availmap[i][j] == availmap[robot[robot_index].x][robot[robot_index].y]
         && goods[gds[i][j]].robotindex < 0 && goods[gds[i][j]].val > 100)
@@ -124,7 +124,7 @@ int selectnearestGoods(int robot_index, int range)
             }
         }
     }
-    if(x_left == 0 && y_up == 0 && x_right == n - 1 && y_down == n - 1) {
+    if(x_up == 0 && y_left == 0 && x_down == n - 1 && y_right == n - 1) {
         paths[robot_index].clear();
         return -1;
     }
