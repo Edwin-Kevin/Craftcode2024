@@ -1,5 +1,8 @@
 #define LOG  // Comment this line if no need for log file.
 #include "main.h"
+#ifdef LOG
+#include <chrono>
+#endif
 
 /* 
 TODO: 
@@ -9,8 +12,9 @@ TODO:
 */
 
 char ch[n][n]; // 存储地图
+char astarmap[n][n]; // 用于 A* 的地图
 int availmap[n][n]; // 记录可达点的地图（包含陆地、机器人、港口位置）
-int robotmap[n][n];  // 存储当前机器人位置的地图, 内容为机器人的编号
+//int robotmap[n][n];  // 存储当前机器人位置的地图, 内容为机器人的编号
 int robotmap_next[n][n]; // 存储下一帧机器人位置的地图, 内容为下一帧机器人的个数
 bool narrowmap[n][n];     // 标记仅有一格宽的狭路区域
 int gds[n][n]; // 存储当前货物位置(内容为货物编号，-1 为无货)
@@ -339,7 +343,7 @@ int Input()
     {
         for(int j = 0; j < n; ++j)
         {
-            robotmap[i][j] = -1;
+            astarmap[i][j] = ch[i][j];
             robotmap_next[i][j] = 0;
             if(ch[i][j] == 'A')
             {
@@ -355,8 +359,10 @@ int Input()
         scanf("%d%d%d%d", &robot[i].goods, &robot[i].x, &robot[i].y, &robot[i].status);
         int x = robot[i].x;
         int y = robot[i].y;
-        robotmap[x][y] = i;
         ch[x][y] = 'A';
+        // 把狭路中的机器人去除，从而不影响 A*
+        if(!narrowmap[x][y])
+            astarmap[x][y] = 'A';
         robot[i].actioned = false;
 
         if(robot[i].goods == 1)
@@ -391,6 +397,7 @@ int main()
 #ifdef LOG
         logFile << "====================================================================" << endl;
         logFile << "Frame " << frame << std::endl;
+        auto start = std::chrono::high_resolution_clock::now();
 #endif
 //---------------------------------------BERTH---------------------------------------//
         for(int berthcnt = 0; berthcnt < berth_num; berthcnt++){
@@ -423,6 +430,9 @@ int main()
                 if (robot[robotcnt].enable && !robot[robotcnt].actioned && robot[robotcnt].status == 1) {
 #ifdef LOG
                     logFile << "Check robot " << robotcnt << endl;
+                    auto end = std::chrono::high_resolution_clock::now();
+                    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                    logFile << "Time: " << duration.count() << " ms" << endl;
 #endif
                     // 机器人闲着
                     if (paths[robotcnt].empty()) {
@@ -539,6 +549,10 @@ int main()
                         else {
                             robot[robotcnt].nearestgoods_index = selectnearestGoods(robotcnt, 1);
 #ifdef LOG
+                            end = std::chrono::high_resolution_clock::now();
+                            duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                            logFile << "Time: " << duration.count() << " ms" << endl;
+
                             logFile << "nearestgoods_index: " << robot[robotcnt].nearestgoods_index << endl;
                             if (paths[robotcnt].size() != 0) {
                                 logFile << "goods(x, y): " << "(" << goods[robot[robotcnt].nearestgoods_index].x
@@ -546,7 +560,7 @@ int main()
                             }
 #endif
                             // 没找到货物，一边去，别挡路
-                            if(robot[robotcnt].nearestgoods_index == -1){
+                            if(robot[robotcnt].nearestgoods_index == -1 && frame > 500){
                                 paths[robotcnt] = aStarSearch(ch, robot[robotcnt].x, robot[robotcnt].y, robot[robotcnt].x + 3,
                                                               robot[robotcnt].y + 3);
                                 if(!paths[robotcnt].empty()) {
