@@ -619,21 +619,43 @@ int main()
                                     paths[robotcnt].insert(paths[robotcnt].begin(), newPoint);
                                     // 还要计算避让点的坐标
                                     // 优先计算横向避让
-                                    if (ch[x + mhy][y + mhx] == '.' || ch[x + mhy][y + mhx] == 'B') {
-                                        newPoint = {x + mhy, y + mhx};
-                                        paths[robotcnt].insert(paths[robotcnt].begin(), newPoint);
-                                    } else if (ch[x - mhy][y - mhx] == '.' || ch[x - mhy][y - mhx] == 'B') {
-                                        newPoint = {x - mhy, y - mhx};
-                                        paths[robotcnt].insert(paths[robotcnt].begin(), newPoint);
+                                    srand(static_cast<unsigned int>(time(0)));
+                                    int avoidance_coefficient = rand() % 2;
+                                    if(avoidance_coefficient == 0) {
+                                        if (ch[x + mhy][y + mhx] == '.' || ch[x + mhy][y + mhx] == 'B') {
+                                            newPoint = {x + mhy, y + mhx};
+                                            paths[robotcnt].insert(paths[robotcnt].begin(), newPoint);
+                                        } else if (ch[x - mhy][y - mhx] == '.' || ch[x - mhy][y - mhx] == 'B') {
+                                            newPoint = {x - mhy, y - mhx};
+                                            paths[robotcnt].insert(paths[robotcnt].begin(), newPoint);
+                                        }
+                                            // 狭路相逢，纵向避让
+                                        else if (ch[x - mhx][y - mhy] == '.' || ch[x - mhx][y - mhy] == 'B') {
+                                            newPoint = {x - mhx, y - mhy};
+                                            paths[robotcnt].insert(paths[robotcnt].begin(), newPoint);
+                                        }
+                                            // 卡死了，动不了
+                                        else {
+                                            robot[robotcnt].actioned = true;
+                                        }
                                     }
-                                        // 狭路相逢，纵向避让
-                                    else if (ch[x - mhx][y - mhy] == '.' || ch[x - mhx][y - mhy] == 'B') {
-                                        newPoint = {x - mhx, y - mhy};
-                                        paths[robotcnt].insert(paths[robotcnt].begin(), newPoint);
-                                    }
-                                        // 卡死了，动不了
-                                    else {
-                                        robot[robotcnt].actioned = true;
+                                    else{
+                                        if (ch[x - mhy][y - mhx] == '.' || ch[x - mhy][y - mhx] == 'B') {
+                                            newPoint = {x - mhy, y - mhx};
+                                            paths[robotcnt].insert(paths[robotcnt].begin(), newPoint);
+                                        } else if (ch[x + mhy][y + mhx] == '.' || ch[x + mhy][y + mhx] == 'B') {
+                                            newPoint = {x + mhy, y + mhx};
+                                            paths[robotcnt].insert(paths[robotcnt].begin(), newPoint);
+                                        }
+                                            // 狭路相逢，纵向避让
+                                        else if (ch[x - mhx][y - mhy] == '.' || ch[x - mhx][y - mhy] == 'B') {
+                                            newPoint = {x - mhx, y - mhy};
+                                            paths[robotcnt].insert(paths[robotcnt].begin(), newPoint);
+                                        }
+                                            // 卡死了，动不了
+                                        else {
+                                            robot[robotcnt].actioned = true;
+                                        }
                                     }
                                 }
                                 // 对面不在狭窄区域，但这个机器人在
