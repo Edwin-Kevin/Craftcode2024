@@ -6,13 +6,15 @@
 
 /* 
 TODO: 
-2.碰撞不可避免，引入碰撞机制，机器人恢复状态清空对应paths，恢复后重算paths
-3.把去港口路线上经过的点都标记为距离这个港口最近
-4.最近货物的选择：随机选两个直线距离最近的，然后计算实际距离
+1.10000帧之前，动态泊位；10000帧后，固定泊位。
+ 修改：262行改为 berth[i].selected。
+ berth.cpp，新增一对函数，10000之前的和之后的分开，10000之前的不管selected，之后的关注selected，
+ 轮船10000帧先去虚拟点倒货,然后去!selected泊位，装完后去selected 泊位，最后结算时再走。
+2.最近货物的选择：随机选两个直线距离最近的，然后计算实际距离
 */
 
 char ch[n][n]; // 存储地图
-char astarmap[n][n]; // 用于 A* 的地图
+//char astarmap[n][n]; // 用于 A* 的地图
 int availmap[n][n]; // 记录可达点的地图（包含陆地、机器人、港口位置）
 //int robotmap[n][n];  // 存储当前机器人位置的地图, 内容为机器人的编号
 int robotmap_next[n][n]; // 存储下一帧机器人位置的地图, 内容为下一帧机器人的个数
@@ -278,15 +280,15 @@ void Init()
         int min = 400;
         int selected_berth = -1;
         for (int i = 0; i < berth_num; ++i) {
-            if (berth[i].boat_index < 0 && availmap[berth[i].x][berth[i].y] == availmap[x][y]) {
+            if (!berth[i].selected && availmap[berth[i].x][berth[i].y] == availmap[x][y]) {
                 berth_distance[i] = aStarSearch(ch, x, y, berth[i].x, berth[i].y);
                 if (berth_distance[i].size() > 0 && berth_distance[i].size() < min) {
                     min = berth_distance[i].size();
-                    selected_berth = i;
+                    berth[i].selected = true;
                 }
             }
         }
-        berth[selected_berth].boat_index = area;
+//        berth[selected_berth].boat_index = area;
 #ifdef LOG
         logFile << "Area " << area << " Selected berth: " << selected_berth << ", distance: " << min << endl;
 #endif
@@ -343,7 +345,7 @@ int Input()
     {
         for(int j = 0; j < n; ++j)
         {
-            astarmap[i][j] = ch[i][j];
+//            astarmap[i][j] = ch[i][j];
             robotmap_next[i][j] = 0;
             if(ch[i][j] == 'A')
             {
@@ -361,8 +363,8 @@ int Input()
         int y = robot[i].y;
         ch[x][y] = 'A';
         // 把狭路中的机器人去除，从而不影响 A*
-        if(!narrowmap[x][y])
-            astarmap[x][y] = 'A';
+//        if(!narrowmap[x][y])
+//            astarmap[x][y] = 'A';
         robot[i].actioned = false;
 
         if(robot[i].goods == 1)
@@ -400,20 +402,20 @@ int main()
         auto start = std::chrono::high_resolution_clock::now();
 #endif
 //---------------------------------------BERTH---------------------------------------//
-        for(int berthcnt = 0; berthcnt < berth_num; berthcnt++){
-#ifdef LOG
-            logFile << "berth[" << berthcnt << "]: boat_index: " << berth[berthcnt].boat_index << endl
-            << "boat status: " << boat[berth[berthcnt].boat_index].status << endl
-            << "boat pos: " << boat[berth[berthcnt].boat_index].pos << endl;
-#endif
-            if(berth[berthcnt].boat_index >= 0 && boat[berth[berthcnt].boat_index].status == BOAT_STATUS_NORMAL &&
-                    boat[berth[berthcnt].boat_index].pos == -1){
-                printf("ship %d %d\n", berth[berthcnt].boat_index, berthcnt);
-#ifdef LOG
-                logFile << "ship " << berth[berthcnt].boat_index << " " << berthcnt << std::endl;
-#endif
-            }
-        }
+//        for(int berthcnt = 0; berthcnt < berth_num; berthcnt++){
+//#ifdef LOG
+//            logFile << "berth[" << berthcnt << "]: boat_index: " << berth[berthcnt].boat_index << endl
+//            << "boat status: " << boat[berth[berthcnt].boat_index].status << endl
+//            << "boat pos: " << boat[berth[berthcnt].boat_index].pos << endl;
+//#endif
+//            if(berth[berthcnt].boat_index >= 0 && boat[berth[berthcnt].boat_index].status == BOAT_STATUS_NORMAL &&
+//                    boat[berth[berthcnt].boat_index].pos == -1){
+//                printf("ship %d %d\n", berth[berthcnt].boat_index, berthcnt);
+//#ifdef LOG
+//                logFile << "ship " << berth[berthcnt].boat_index << " " << berthcnt << std::endl;
+//#endif
+//            }
+//        }
 //-----------------------------------ROBOT------------------------------------------------//
         // 本轮执行动作的机器人数量，如果为0就可以退出循环了
         for(int robotcnt = 0; robotcnt < 10; robotcnt++){
@@ -512,8 +514,20 @@ int main()
                                 actioned_bot++;
                                 robot[robotcnt].actioned = true;
                                 // 取两个最近的泊位
-                                robot[robotcnt].nearestberth_index = nearest_berth(availmap, robot[robotcnt].x, robot[robotcnt].y);
-                                robot[robotcnt].secondnearestberth = second_nearest_berth(availmap, robot[robotcnt].x, robot[robotcnt].y);
+                                if(frame <= 11000) {
+                                    robot[robotcnt].nearestberth_index = nearest_berth(availmap, robot[robotcnt].x,
+                                                                                       robot[robotcnt].y);
+                                    robot[robotcnt].secondnearestberth = second_nearest_berth(availmap,
+                                                                                              robot[robotcnt].x,
+                                                                                              robot[robotcnt].y);
+                                }
+                                else{
+                                    robot[robotcnt].nearestberth_index = nearest_berth_after_11000(availmap, robot[robotcnt].x,
+                                                                                       robot[robotcnt].y);
+                                    robot[robotcnt].secondnearestberth = second_nearest_berth_after_11000(availmap,
+                                                                                              robot[robotcnt].x,
+                                                                                              robot[robotcnt].y);
+                                }
 #ifdef LOG
                                 logFile << "Robot " << robotcnt << " reached the goods! " << endl;
                                 logFile << "robot[" << robotcnt << "]: (" << robot[robotcnt].x << ", " << robot[robotcnt].y
@@ -670,17 +684,90 @@ int main()
         // 检查船只
         for(int i = 0; i < boat_num; ++ i)
         {
+            // 对虚拟点的船找一个货最多的泊位
+            if(frame < 8500 && boat[i].status == BOAT_STATUS_NORMAL){
+                if(boat[i].pos == -1) {
+                    int berthid = -1;
+                    int max_berth_goods = -1;
+                    for (int j = 0; j < berth_num; j++) {
+                        if (berth[j].goods > max_berth_goods && berth[j].boat_index == -1) {
+                            berthid = j;
+                            max_berth_goods = berth[j].goods;
+                        }
+                    }
+                    printf("ship %d %d\n", i, berthid);
+                    boat[i].goods = 0;
+                    berth[berthid].boat_index = i;
+                    boat[i].pos = berthid;
+                }
+                else if(boat[i].pos >= 0 && boat[i].goods < boat_capacity - 12){
+                    // 货装完了，去别的泊位
+                    if(berth[boat[i].pos].goods <= 2){
+                        berth[boat[i].pos].boat_index = -1;
+                        int berthid = -1;
+                        int max_berth_goods = -1;
+                        for (int j = 0; j < berth_num; j++) {
+                            if (berth[j].goods > max_berth_goods && berth[j].boat_index == -1) {
+                                berthid = j;
+                                max_berth_goods = berth[j].goods;
+                            }
+                        }
+                        printf("ship %d %d\n", i, berthid);
+                        berth[berthid].boat_index = i;
+                        boat[i].pos = berthid;
+                    }
+                }
+            }
+            if(frame == 10000){
+                printf("go %d\n", i);
+                if(boat[i].pos >= 0) {
+                    berth[boat[i].pos].boat_index = -1;
+                    boat[i].pos = -1;
+                }
+            }
+            if(frame > 10500 && frame < 13000){
+                if(boat[i].pos == -1 && boat[i].status == BOAT_STATUS_NORMAL) {
+                    for (int j = 0; j < berth_num; j++) {
+                        if (!berth[j].selected && berth[j].boat_index == -1) {
+                            printf("ship %d %d\n", i, j);
+                            boat[i].goods = 0;
+                            boat[i].pos = j;
+                            berth[j].boat_index = i;
+                            break;
+                        }
+                    }
+                }
+            }
+            if(frame > 12000){
+                if(boat[i].pos >= 0 && boat[i].status == BOAT_STATUS_NORMAL){
+                    if(!berth[boat[i].pos].selected && berth[boat[i].pos].goods <= 0){
+                        for(int j = 0; j < berth_num; j++){
+                            if(berth[j].selected && berth[j].boat_index == -1){
+                                printf("ship %d %d\n", i, j);
+                                berth[boat[i].pos].boat_index = -1;
+                                boat[i].pos = j;
+                                berth[j].boat_index = i;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
             // 如果船装满了货，就开走
             if(boat[i].goods >= boat_capacity && boat[i].status == BOAT_STATUS_NORMAL && boat[i].pos >= 0)
             {
-//                berth[boat[i].pos].boat_index = -1;
+                berth[boat[i].pos].boat_index = -1;
                 printf("go %d\n", i);
                 // 清空船上的货物计数器
                 boat[i].goods = 0;
             }
+            // 即将结算时开走所有船
             if(boat[i].status == BOAT_STATUS_NORMAL && boat[i].pos >= 0){
-                if((berth[boat[i].pos].transport_time + frame + 1) >= 15000)
+                if((berth[boat[i].pos].transport_time + frame + 1) >= 15000) {
                     printf("go %d\n", i);
+                    boat[i].goods = 0;
+                    berth[boat[i].pos].boat_index = -1;
+                }
             }
         }
 

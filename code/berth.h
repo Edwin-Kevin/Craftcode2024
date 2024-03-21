@@ -39,5 +39,7 @@ struct Berth
 */
 int nearest_berth(int availmap[n][n], int x, int y);
 int second_nearest_berth(int availmap[n][n], int x, int y);
+int nearest_berth_after_11000(int availmap[n][n], int x, int y);
+int second_nearest_berth_after_11000(int availmap[n][n], int x, int y);
 #endif
 
