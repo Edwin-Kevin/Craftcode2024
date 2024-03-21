@@ -137,6 +137,36 @@ int selectnearestGoods(int robot_index, int range)
     // 扩大范围继续找
     return selectnearestGoods(robot_index, range + 1);
 }
+int selectbestGoods(int robot_index){
+    int best_goods_index = -1;
+    int goods_index[3] = {-1};
+    int range = 1;
+    std::vector<std::pair<int, int>> temp_paths = std::vector<std::pair<int, int>>();
+    for(int i = 0; i < 3; i ++){
+        goods_index[i] = selectnearestGoods(robot_index, range);
+        if(goods_index[i] == -1){
+            break;
+        }
+        else{
+            goods[goods_index[i]].robotindex = -1;
+            range = max(abs(robot[robot_index].x - goods[goods_index[i]].x), abs(robot[robot_index].y - goods[goods_index[i]].y));
+            range ++;
+            if(temp_paths.empty()){
+                temp_paths = paths[robot_index];
+                best_goods_index = goods_index[i];
+            }
+            else{
+                temp_paths = (temp_paths.size() < paths[robot_index].size()) ? temp_paths : paths[robot_index];
+                best_goods_index = (temp_paths.size() < paths[robot_index].size()) ? best_goods_index : goods_index[i];
+            }
+        }
+    }
+    if(best_goods_index >= 0)
+        goods[best_goods_index].robotindex = robot_index;
+    paths[robot_index] = temp_paths;
+    return best_goods_index;
+}
+
 // 检查指定位置是否为边界或不可通行
 bool isBoundaryOrBlocked(int row, int col){
     if(row < 0 || row >= n || col < 0 || col >n || availmap[row][col] < 0){
@@ -561,7 +591,10 @@ int main()
                         }
                         // 机器人空闲，分配新货物
                         else {
-                            robot[robotcnt].nearestgoods_index = selectnearestGoods(robotcnt, 1);
+                            if(frame < 500)
+                                robot[robotcnt].nearestgoods_index = selectnearestGoods(robotcnt, 1);
+                            else
+                                robot[robotcnt].nearestgoods_index = selectbestGoods(robotcnt);
 #ifdef LOG
                             end = std::chrono::high_resolution_clock::now();
                             duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
@@ -574,12 +607,21 @@ int main()
                             }
 #endif
                             // 没找到货物，一边去，别挡路
-                            if(robot[robotcnt].nearestgoods_index == -1 && frame > 500){
-                                paths[robotcnt] = aStarSearch(ch, robot[robotcnt].x, robot[robotcnt].y, robot[robotcnt].x + 3,
-                                                              robot[robotcnt].y + 3);
-                                if(!paths[robotcnt].empty()) {
-                                    paths[robotcnt].erase(paths[robotcnt].begin());
-                                    robotmap_next[paths[robotcnt].front().first][paths[robotcnt].front().second]++;
+                            if(robot[robotcnt].nearestgoods_index == -1){
+                                for(int berthcnt = 0; berthcnt < berth_num; berthcnt++){
+                                    if(robot[robotcnt].x == berth[berthcnt].x && robot[robotcnt].y == berth[berthcnt].y){
+                                        paths[robotcnt] = aStarSearch(ch, robot[robotcnt].x, robot[robotcnt].y, robot[robotcnt].x + 3,
+                                                                      robot[robotcnt].y + 3);
+                                        if(!paths[robotcnt].empty()) {
+                                            paths[robotcnt].erase(paths[robotcnt].begin());
+                                            robotmap_next[paths[robotcnt].front().first][paths[robotcnt].front().second]++;
+                                        }
+                                        break;
+                                    }
+//                                    if(robot[robotcnt].x == berth[berthcnt].x + 3 && robot[robotcnt].y == berth[berthcnt].y + 3) {
+//                                        robot[robotcnt].actioned = true;
+//                                        break;
+//                                    }
                                 }
                             }
                         }
@@ -686,7 +728,7 @@ int main()
                             // 移动成功，并且没到目的地，机器人操作结束
                             // 如果到目的地，执行取、放货操作
                             paths[robotcnt].erase(paths[robotcnt].begin());
-                            if (!paths[robotcnt].empty()) {
+                            if (!paths[robotcnt].empty() || (robot[robotcnt].nearestgoods_index < 0 && robot[robotcnt].nearestberth_index < 0)) {
                                 robot[robotcnt].actioned = true;
                             }
                             robot[robotcnt].x = next_step.first;
