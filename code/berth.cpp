@@ -83,7 +83,7 @@ int second_nearest_berth_after_11000(int availmap[n][n], int x, int y)
     extern struct Berth berth[berth_num];
 
     int nearestid;
-    int second_nearestid;
+    int second_nearestid = -1;
     int min = 400;
     int sec_min = 400;
     for(int i = 0; i < berth_num; i++)

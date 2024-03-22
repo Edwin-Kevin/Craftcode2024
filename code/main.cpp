@@ -169,7 +169,7 @@ int selectbestGoods(int robot_index){
 
 // 检查指定位置是否为边界或不可通行
 bool isBoundaryOrBlocked(int row, int col){
-    if(row < 0 || row >= n || col < 0 || col >n || availmap[row][col] < 0){
+    if(row < 0 || row >= n || col < 0 || col >n || availmap[row][col] < 0 || ch[row][col] == 'A'){
         return true;
     }
     return false;
@@ -198,7 +198,7 @@ void markNarrowArea(){
                 availDirection += isBoundaryOrBlocked(i + 1, j) ? 0 : 1;
                 availDirection += isBoundaryOrBlocked(i - 1, j) ? 0 : 1;
 
-                if(blockedDirection >= 2 && availDirection <= 4){
+                if(blockedDirection >= 2 && availDirection <= 3){
                     // 狭路区域遇到则避让，开阔区域交错则等待
                     // 判断：在狭路区域对撞则退格避让，开阔区域对撞则重新A*
                     narrowmap[i][j] = true;
@@ -314,10 +314,11 @@ void Init()
                 berth_distance[i] = aStarSearch(ch, x, y, berth[i].x, berth[i].y);
                 if (berth_distance[i].size() > 0 && berth_distance[i].size() < min) {
                     min = berth_distance[i].size();
-                    berth[i].selected = true;
+                    selected_berth = i;
                 }
             }
         }
+        berth[selected_berth].selected = true;
 //        berth[selected_berth].boat_index = area;
 #ifdef LOG
         logFile << "Area " << area << " Selected berth: " << selected_berth << ", distance: " << min << endl;
@@ -405,6 +406,7 @@ int Input()
             gds[goods[robot[i].nearestgoods_index].x][goods[robot[i].nearestgoods_index].y] = -1;
         }
     }
+    markNarrowArea();
 
     // 获取船信息
     for(int i = 0; i < 5; i ++)
@@ -505,15 +507,23 @@ int main()
                             else if(robot[robotcnt].goods == 1)
                             {
                                 // 比较两个最近港口的实际路线长度
-                                vector<pair<int, int>> temp_path = aStarSearch(ch, robot[robotcnt].x, robot[robotcnt].y,
-                                                                       berth[robot[robotcnt].secondnearestberth].x,
-                                                                       berth[robot[robotcnt].secondnearestberth].y);
-                                paths[robotcnt] = aStarSearch(ch, robot[robotcnt].x, robot[robotcnt].y,
-                                                              berth[robot[robotcnt].nearestberth_index].x,
-                                                              berth[robot[robotcnt].nearestberth_index].y);
-                                if(!temp_path.empty() && temp_path.size() < paths[robotcnt].size()) {
-                                    paths[robotcnt] = temp_path;
-                                    robot[robotcnt].nearestberth_index = robot[robotcnt].secondnearestberth;
+                                if(robot[robotcnt].secondnearestberth >= 0) {
+                                    vector<pair<int, int>> temp_path = aStarSearch(ch, robot[robotcnt].x,
+                                                                                   robot[robotcnt].y,
+                                                                                   berth[robot[robotcnt].secondnearestberth].x,
+                                                                                   berth[robot[robotcnt].secondnearestberth].y);
+                                    paths[robotcnt] = aStarSearch(ch, robot[robotcnt].x, robot[robotcnt].y,
+                                                                  berth[robot[robotcnt].nearestberth_index].x,
+                                                                  berth[robot[robotcnt].nearestberth_index].y);
+                                    if (!temp_path.empty() && temp_path.size() < paths[robotcnt].size()) {
+                                        paths[robotcnt] = temp_path;
+                                        robot[robotcnt].nearestberth_index = robot[robotcnt].secondnearestberth;
+                                    }
+                                }
+                                else {
+                                    paths[robotcnt] = aStarSearch(ch, robot[robotcnt].x, robot[robotcnt].y,
+                                                                  berth[robot[robotcnt].nearestberth_index].x,
+                                                                  berth[robot[robotcnt].nearestberth_index].y);
                                 }
                                 // 路径去掉起点
                                 if(!paths[robotcnt].empty()) {
@@ -534,10 +544,10 @@ int main()
                         {
                             // 拾取货物
                             if (robot[robotcnt].x == goods[robot[robotcnt].nearestgoods_index].x &&
-                                 robot[robotcnt].y == goods[robot[robotcnt].nearestgoods_index].y &&
-                                 robot[robotcnt].goods == 0 &&
-                                 goods[robot[robotcnt].nearestgoods_index].remaintime > 0 &&
-                                 goods[robot[robotcnt].nearestgoods_index].status == 0) {
+                                robot[robotcnt].y == goods[robot[robotcnt].nearestgoods_index].y &&
+                                robot[robotcnt].goods == 0 &&
+                                goods[robot[robotcnt].nearestgoods_index].remaintime > 0 &&
+                                goods[robot[robotcnt].nearestgoods_index].status == 0) {
 
                                 printf("get %d\n", robotcnt);
                                 robot[robotcnt].goods = 1;
@@ -566,9 +576,9 @@ int main()
                                 logFile << ", " << goods[robot[robotcnt].nearestgoods_index].y << ") ";
                                 logFile << "remaintime: " << goods[robot[robotcnt].nearestgoods_index].remaintime << endl;
                                 logFile << "get " << robotcnt << endl;
-                                logFile << "nearest berth: " << robot[robotcnt].nearestberth_index << "  berth boatindex: "
+                                logFile << "nearest berth: " << robot[robotcnt].nearestberth_index << endl << "  berth boatindex: "
                                 << berth[robot[robotcnt].nearestberth_index].boat_index << endl;
-                                logFile << "second nearest berth: " << robot[robotcnt].secondnearestberth << "  berth boatindex: "
+                                logFile << "second nearest berth: " << robot[robotcnt].secondnearestberth << endl << "  berth boatindex: "
                                 << berth[robot[robotcnt].secondnearestberth].boat_index << endl;
 
 #endif
